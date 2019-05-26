@@ -54,8 +54,12 @@ fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
 
-CIFAR_CLASSES = 10
+CIFAR_CLASSES = 2
 
+def loader(path): 
+  lbl = ['bind', 'not_bind'].index(path.split('/')[-2]) 
+  import pandas as pd 
+  return pd.read_csv(path, sep='\t').values, lbl
 
 def main():
   if not torch.cuda.is_available():
@@ -83,8 +87,8 @@ def main():
       momentum=args.momentum,
       weight_decay=args.weight_decay)
 
-  train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
+  #train_transform, valid_transform = utils._data_transforms_cifar10(args)
+  train_data = dset.DatasetFolder(args.data, loader, ['ext'])#dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
 
   num_train = len(train_data)
   indices = list(range(num_train))
@@ -131,8 +135,9 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
   objs = utils.AvgrageMeter()
   top1 = utils.AvgrageMeter()
   top5 = utils.AvgrageMeter()
-
   for step, (input, target) in enumerate(train_queue):
+    print(input)
+    print(target)
     model.train()
     n = input.size(0)
 
