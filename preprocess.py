@@ -1,5 +1,6 @@
 import os
 import sys
+import numpy as np
 
 # python preprocess.py <annotation file> <sequence file> <dest folder>
 
@@ -27,21 +28,21 @@ with open(sys.argv[1]) as anno_file:
 				lbl = 'not_bind'
 			
 			seq = anno_file.readline()[1:].strip()
-			A = np.array(seq)
-			A[not A == 'A'] = 0
-			A[A == 'A'] = 1
+			A = np.array(list(seq))
+			A[A != 'A'] = '0'
+			A[A == 'A'] = '1'
 			A = A.tolist()
-			T = np.array(seq)
-			T[not T == 'T'] = 0
-			T[T == 'T'] = 1
+			T = np.array(list(seq))
+			T[T != 'T'] = '0'
+			T[T == 'T'] = '1'
 			T = T.tolist()
-			C = np.array(seq)
-			C[not C == 'C'] = 0
-			C[C == 'C'] = 1
+			C = np.array(list(seq))
+			C[C != 'C'] = '0'
+			C[C == 'C'] = '1'
 			C = C.tolist()
-			G = np.array(seq)
-			G[not G == 'G'] = 0
-			G[G == 'G'] = 1
+			G = np.array(list(seq))
+			G[G != 'G'] = '0'
+			G[G == 'G'] = '1'
 			G = G.tolist()
 			res = []
 			res.append('%s\t%s' % ('\t'.join(A), zero_padding('0', MAX_LEN - int(len(A)), '\t')))
@@ -50,5 +51,7 @@ with open(sys.argv[1]) as anno_file:
 			res.append('%s\t%s' % ('\t'.join(G), zero_padding('0', MAX_LEN - int(len(G)), '\t')))
 			for i in range(5):
 				res.append(anno_file.readline().lstrip().strip() + '\t' + zero_padding('0', MAX_LEN - int(len(A)), '\t'))
+                        if not os.path.exists(os.path.join(sys.argv[3], lbl)):
+                                os.makedirs(os.path.join(sys.argv[3], lbl))
 			write_file('\n'.join(res), os.path.join(sys.argv[3], lbl, str(counter) + '.ext'))
 			counter += 1

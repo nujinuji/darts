@@ -87,8 +87,10 @@ def main():
       momentum=args.momentum,
       weight_decay=args.weight_decay)
 
+  
   #train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  train_data = dset.DatasetFolder(args.data, loader, ['ext'])#dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
+  train_data = dset.DatasetFolder(args.data, loader, ['ext'])
+  #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
 
   num_train = len(train_data)
   indices = list(range(num_train))
@@ -136,16 +138,17 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
   top1 = utils.AvgrageMeter()
   top5 = utils.AvgrageMeter()
   for step, (input, target) in enumerate(train_queue):
-    print(input)
-    print(target)
+    input = input[0]
     model.train()
-    n = input.size(0)
+    print(len(input))
+    #n = input.size(0)
 
     input = Variable(input, requires_grad=False).cuda()
     target = Variable(target, requires_grad=False).cuda(async=True)
 
     # get a random minibatch from the search queue with replacement
     input_search, target_search = next(iter(valid_queue))
+    input_search = input_search[0]
     input_search = Variable(input_search, requires_grad=False).cuda()
     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
 
