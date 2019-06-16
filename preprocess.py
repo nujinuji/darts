@@ -9,49 +9,49 @@ MAX_LEN = 41
 
 
 def write_file(profile, fname):
-	with open(fname, 'w') as f:
-		f.write(profile)
+  with open(fname, 'w') as f:
+    f.write(profile)
 
 counter = 0
 
 def zero_padding(holder, length, separator):
-	return separator.join([holder] * int(length))
+  return separator.join([holder] * int(length))
 
 with open(sys.argv[1]) as anno_file:
-	with open(sys.argv[2]) as seq_file:
-		for seq_line in seq_file:
-			affinity = float(seq_line.split(' ')[0])
-			
-			if affinity >= CUTOFF:
-				lbl = 'bind'
-			else:
-				lbl = 'not_bind'
-			
-			seq = anno_file.readline()[1:].strip()
-			A = np.array(list(seq))
-			A[A != 'A'] = '0'
-			A[A == 'A'] = '1'
-			A = A.tolist()
-			T = np.array(list(seq))
-			T[T != 'T'] = '0'
-			T[T == 'T'] = '1'
-			T = T.tolist()
-			C = np.array(list(seq))
-			C[C != 'C'] = '0'
-			C[C == 'C'] = '1'
-			C = C.tolist()
-			G = np.array(list(seq))
-			G[G != 'G'] = '0'
-			G[G == 'G'] = '1'
-			G = G.tolist()
-			res = []
-			res.append('%s\t%s' % ('\t'.join(A), zero_padding('0', MAX_LEN - int(len(A)), '\t')))
-			res.append('%s\t%s' % ('\t'.join(T), zero_padding('0', MAX_LEN - int(len(T)), '\t')))
-			res.append('%s\t%s' % ('\t'.join(C), zero_padding('0', MAX_LEN - int(len(C)), '\t')))
-			res.append('%s\t%s' % ('\t'.join(G), zero_padding('0', MAX_LEN - int(len(G)), '\t')))
-			for i in range(5):
-				res.append(anno_file.readline().lstrip().strip() + '\t' + zero_padding('0', MAX_LEN - int(len(A)), '\t'))
-                        if not os.path.exists(os.path.join(sys.argv[3], lbl)):
-                                os.makedirs(os.path.join(sys.argv[3], lbl))
-			write_file('\n'.join(res), os.path.join(sys.argv[3], lbl, str(counter) + '.ext'))
-			counter += 1
+  with open(sys.argv[2]) as seq_file:
+    for seq_line in seq_file:
+      affinity = float(seq_line.split(' ')[0])
+      
+      if affinity >= CUTOFF:
+        lbl = 'bind'
+      else:
+        lbl = 'not_bind'
+      
+      seq = anno_file.readline()[1:].strip()
+      A = np.array(list(seq))
+      A[A != 'A'] = '0'
+      A[A == 'A'] = '1'
+      A = A.tolist()
+      T = np.array(list(seq))
+      T[T != 'T'] = '0'
+      T[T == 'T'] = '1'
+      T = T.tolist()
+      C = np.array(list(seq))
+      C[C != 'C'] = '0'
+      C[C == 'C'] = '1'
+      C = C.tolist()
+      G = np.array(list(seq))
+      G[G != 'G'] = '0'
+      G[G == 'G'] = '1'
+      G = G.tolist()
+      res = []
+      res.append('%s\t%s' % ('\t'.join(A), zero_padding('0', MAX_LEN - int(len(A)), '\t')))
+      res.append('%s\t%s' % ('\t'.join(T), zero_padding('0', MAX_LEN - int(len(T)), '\t')))
+      res.append('%s\t%s' % ('\t'.join(C), zero_padding('0', MAX_LEN - int(len(C)), '\t')))
+      res.append('%s\t%s' % ('\t'.join(G), zero_padding('0', MAX_LEN - int(len(G)), '\t')))
+      for i in range(5):
+        res.append(anno_file.readline().lstrip().strip() + '\t' + zero_padding('0', MAX_LEN - int(len(A)), '\t'))
+      if not os.path.exists(os.path.join(sys.argv[3], lbl)):
+        os.makedirs(os.path.join(sys.argv[3], lbl))
+      write_file('\n'.join(res), os.path.join(sys.argv[3], lbl, str(counter) + '.ext'))
+      counter += 1
