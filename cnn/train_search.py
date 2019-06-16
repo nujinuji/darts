@@ -61,6 +61,13 @@ def loader(path):
   import pandas as pd 
   return pd.read_csv(path, sep='\t').values, lbl
 
+'''
+transform data to tensor from NxHxW to NxCxHxW
+'''
+def transform(data):
+  return torch.Tensor([data])
+
+
 def main():
   if not torch.cuda.is_available():
     logging.info('no gpu device available')
@@ -89,8 +96,9 @@ def main():
 
   
   #train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  train_data = dset.DatasetFolder(args.data, loader, ['ext'])
+  train_data = dset.DatasetFolder(args.data, loader, ['ext'], transform=transfrom)
   #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
+
 
   num_train = len(train_data)
   indices = list(range(num_train))
