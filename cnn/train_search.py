@@ -96,7 +96,7 @@ def main():
 
   
   #train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  train_data = dset.DatasetFolder(args.data, loader, ['ext'], transform=transfrom)
+  train_data = dset.DatasetFolder(args.data, loader, ['ext'], transform=transform)
   #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
 
 
