@@ -11,9 +11,7 @@ class MixedOp(nn.Module):
 
   def __init__(self, C, stride):
     super(MixedOp, self).__init__()
-    print(C)
     self._ops = nn.ModuleList()
-    print(OPS)
     for primitive in PRIMITIVES:
       op = OPS[primitive](C, stride, False)
       if 'pool' in primitive:
@@ -103,9 +101,6 @@ class Network(nn.Module):
     return model_new
 
   def forward(self, input):
-    print(input)
-    print(input.shape)
-
     s0 = s1 = self.stem(input)
     for i, cell in enumerate(self.cells):
       if cell.reduction:

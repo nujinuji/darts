@@ -64,8 +64,10 @@ def loader(path):
 '''
 transform data to tensor from NxHxW to NxCxHxW
 '''
-def transform(data):
-  return torch.Tensor([data])
+def transform(d):
+  data, label = d[0], d[1]
+  print(data.shape)
+  return torch.tensor(data.reshape((1, 8, 41)), dtype=torch.float32), label
 
 
 def main():
@@ -147,6 +149,7 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
   top5 = utils.AvgrageMeter()
   for step, (input, target) in enumerate(train_queue):
     input = input[0]
+    print(input.shape)
     model.train()
     print(len(input))
     #n = input.size(0)
@@ -170,10 +173,12 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
 
+    n = input.size(0)
     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-    objs.update(loss.data[0], n)
-    top1.update(prec1.data[0], n)
-    top5.update(prec5.data[0], n)
+    print('loss.data: ' + str(loss.data.item()))
+    objs.update(loss.data.item(), n)
+    top1.update(prec1.data.item(), n)
+    top5.update(prec5.data.item(), n)
 
     if step % args.report_freq == 0:
       logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
