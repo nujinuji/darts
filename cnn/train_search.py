@@ -149,9 +149,9 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
   top5 = utils.AvgrageMeter()
   for step, (input, target) in enumerate(train_queue):
     input = input[0]
-    print(input.shape)
+    #print(input.shape)
     model.train()
-    print(len(input))
+    #print(len(input))
     #n = input.size(0)
 
     input = Variable(input, requires_grad=False).cuda()
