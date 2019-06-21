@@ -66,9 +66,12 @@ transform data to tensor from NxHxW to NxCxHxW
 '''
 def transform(d):
   data, label = d[0], d[1]
-  print(data.shape)
-  return torch.tensor(data.reshape((1, 8, 41)), dtype=torch.float32), label
-
+  try:
+    return torch.tensor(data.reshape((1, 8, 41)), dtype=torch.float32), label
+  except ValueError:
+    print(data.shape)
+    sys.stderr.write(str(data))
+    return 0
 
 def main():
   if not torch.cuda.is_available():

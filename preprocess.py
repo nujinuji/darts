@@ -45,12 +45,12 @@ with open(sys.argv[1]) as anno_file:
       G[G == 'G'] = '1'
       G = G.tolist()
       res = []
-      res.append('%s\t%s' % ('\t'.join(A), zero_padding('0', MAX_LEN - int(len(A)), '\t')))
-      res.append('%s\t%s' % ('\t'.join(T), zero_padding('0', MAX_LEN - int(len(T)), '\t')))
-      res.append('%s\t%s' % ('\t'.join(C), zero_padding('0', MAX_LEN - int(len(C)), '\t')))
-      res.append('%s\t%s' % ('\t'.join(G), zero_padding('0', MAX_LEN - int(len(G)), '\t')))
+      res.append(('%s\t%s' % ('\t'.join(A), zero_padding('0', MAX_LEN - int(len(A)), '\t'))).strip().rstrip())
+      res.append(('%s\t%s' % ('\t'.join(T), zero_padding('0', MAX_LEN - int(len(T)), '\t'))).strip().rstrip())
+      res.append(('%s\t%s' % ('\t'.join(C), zero_padding('0', MAX_LEN - int(len(C)), '\t'))).strip().rstrip())
+      res.append(('%s\t%s' % ('\t'.join(G), zero_padding('0', MAX_LEN - int(len(G)), '\t'))).strip().rstrip())
       for i in range(5):
-        res.append(anno_file.readline().lstrip().strip() + '\t' + zero_padding('0', MAX_LEN - int(len(A)), '\t'))
+        res.append((anno_file.readline().lstrip().strip() + '\t' + zero_padding('0', MAX_LEN - int(len(A)), '\t')).strip().rstrip())
       if not os.path.exists(os.path.join(sys.argv[3], lbl)):
         os.makedirs(os.path.join(sys.argv[3], lbl))
       write_file('\n'.join(res), os.path.join(sys.argv[3], lbl, str(counter) + '.ext'))
