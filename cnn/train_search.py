@@ -61,17 +61,28 @@ def loader(path):
   import pandas as pd 
   return pd.read_csv(path, sep='\t').values, lbl
 
-'''
-transform data to tensor from NxHxW to NxCxHxW
-'''
+
 def transform(d):
+  '''Transform data to tensor from NxHxW to NxCxHxW
+
+    Parameters
+    ----------
+    d : list
+      input sequence data
+
+    Returns
+    -------
+    torch.tensor
+      4d matrix of float
+  '''
   data, label = d[0], d[1]
   try:
-    return torch.tensor(data.reshape((1, 8, 41)), dtype=torch.float32), label
+    return torch.tensor(data.reshape((1, 9, 41)), dtype=torch.float32), label
   except ValueError:
     print(data.shape)
     sys.stderr.write(str(data))
     return 0
+
 
 def main():
   if not torch.cuda.is_available():

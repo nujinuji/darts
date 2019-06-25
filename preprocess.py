@@ -1,3 +1,12 @@
+# ----------------------------------------------------------------------------
+# Preprocessing of clamped RNA sequence data
+#
+# Specific formatting of input for DARTS
+#
+# https://github.com/nujinuji/darts
+# ----------------------------------------------------------------------------
+
+
 import os
 import sys
 import numpy as np
@@ -14,14 +23,25 @@ def write_file(profile, fname):
 
 counter = 0
 
+
 def zero_padding(holder, length, separator):
+  """Make shorter sequences zero-padded
+
+  Parameters
+  ----------
+  holder
+  length
+  separator
+  """
   return separator.join([holder] * int(length))
+
 
 with open(sys.argv[1]) as anno_file:
   with open(sys.argv[2]) as seq_file:
     for seq_line in seq_file:
       affinity = float(seq_line.split(' ')[0])
       
+      # label files according to cutoff
       if affinity >= CUTOFF:
         lbl = 'bind'
       else:
