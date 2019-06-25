@@ -77,7 +77,7 @@ def transform(d):
   '''
   data, label = d[0], d[1]
   try:
-    return torch.tensor(data.reshape((1, 9, 41)), dtype=torch.float32), label
+    return torch.tensor(data.reshape((1, 8, 41)), dtype=torch.float32), label
   except ValueError:
     print(data.shape)
     sys.stderr.write(str(data))
