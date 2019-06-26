@@ -59,7 +59,7 @@ CIFAR_CLASSES = 2
 def loader(path): 
   lbl = ['bind', 'not_bind'].index(path.split('/')[-2]) 
   import pandas as pd 
-  return pd.read_csv(path, sep='\t').values, lbl
+  return pd.read_csv(path, sep='\t', header = None).values, lbl
 
 
 def transform(d):
@@ -77,9 +77,8 @@ def transform(d):
   '''
   data, label = d[0], d[1]
   try:
-    return torch.tensor(data.reshape((1, 8, 41)), dtype=torch.float32), label
+    return torch.tensor(data.reshape((1, 9, 41)), dtype=torch.float32), label
   except ValueError:
-    print(data.shape)
     sys.stderr.write(str(data))
     return 0
 
@@ -207,6 +206,7 @@ def infer(valid_queue, model, criterion):
   model.eval()
 
   for step, (input, target) in enumerate(valid_queue):
+    input = input[0]
     input = Variable(input, volatile=True).cuda()
     target = Variable(target, volatile=True).cuda(async=True)
 
@@ -215,9 +215,9 @@ def infer(valid_queue, model, criterion):
 
     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
     n = input.size(0)
-    objs.update(loss.data[0], n)
-    top1.update(prec1.data[0], n)
-    top5.update(prec5.data[0], n)
+    objs.update(loss.data.item(), n)
+    top1.update(prec1.data.item(), n)
+    top5.update(prec5.data.item(), n)
 
     if step % args.report_freq == 0:
       logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
