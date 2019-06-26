@@ -29,6 +29,7 @@ def accuracy(output, target, topk=(1,)):
   print(maxk)
   print(batch_size)
 
+  # reduce dimension to 1
   _, pred = output.topk(1, dim = 1, largest = True, sorted = True)
   pred = pred.t()
   correct = pred.eq(target.view(1, -1).expand_as(pred))

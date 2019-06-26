@@ -99,6 +99,7 @@ class FactorizedReduce(nn.Module):
 
   def forward(self, x):
     x = self.relu(x)
+    # correction of dimension mismatch error
     out = torch.cat([self.conv_1(x), self.conv_2(x[:,:,:,:])], dim=1)
     out = self.bn(out)
     return out
