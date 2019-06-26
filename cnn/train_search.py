@@ -54,30 +54,44 @@ fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
 
+# binary classification of binding or not binding
 CIFAR_CLASSES = 2
 
-def loader(path): 
+
+def loader(path):
+  """Load data from given path
+
+  Parameters
+  ----------
+  path : str
+    file directory containing binding information
+
+  Returns
+  -------
+  tuple of numpy array and str
+    2d data matrix and its label
+  """
   lbl = ['bind', 'not_bind'].index(path.split('/')[-2]) 
   import pandas as pd 
-  return pd.read_csv(path, sep='\t').values, lbl
+  return pd.read_csv(path, sep='\t', header = None).values, lbl
 
 
 def transform(d):
-  '''Transform data to tensor from NxHxW to NxCxHxW
+  """Transform data to tensor from NxHxW to NxCxHxW by adding 1 dimension
 
-    Parameters
-    ----------
-    d : list
-      input sequence data
+  Parameters
+  ----------
+  d : pytorch.tensor
+    3d matrix of input sequence data
 
-    Returns
-    -------
-    torch.tensor
-      4d matrix of float
-  '''
+  Returns
+  -------
+  tuple of torch.tensor and str
+    4d matrix of float with its label
+  """
   data, label = d[0], d[1]
   try:
-    return torch.tensor(data.reshape((1, 8, 41)), dtype=torch.float32), label
+    return torch.tensor(data.reshape((1, 9, 41)), dtype=torch.float32), label
   except ValueError:
     print(data.shape)
     sys.stderr.write(str(data))
@@ -173,6 +187,9 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
 
     # get a random minibatch from the search queue with replacement
     input_search, target_search = next(iter(valid_queue))
+
+    # input_search dimension: 1 * n * 9 * 41
+    # retrieve input_search data then transform to n * 1 * 9 * 41
     input_search = input_search[0]
     input_search = Variable(input_search, requires_grad=False).cuda()
     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
