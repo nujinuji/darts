@@ -12,6 +12,7 @@ import torch.utils
 import torch.nn.functional as F
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
+import pandas as pd 
 
 from torch.autograd import Variable
 from model_search import Network
@@ -72,8 +73,11 @@ def loader(path):
     2d data matrix and its label
   """
   lbl = ['bind', 'not_bind'].index(path.split('/')[-2]) 
-  import pandas as pd 
-  return pd.read_csv(path, sep='\t', header = None).values, lbl
+  csv = pd.read_csv(path, sep='\t', header = None).values
+  data = np.zeros((2, 5, 41))
+  data[0, :4, :] = csv[:4, :]
+  data[1, :, :] = csv[4:, :]
+  return data, lbl
 
 
 def transform(d):
@@ -91,7 +95,7 @@ def transform(d):
   """
   data, label = d[0], d[1]
   try:
-    return torch.tensor(data.reshape((1, 9, 41)), dtype=torch.float32), label
+    return torch.tensor(data, dtype=torch.float32), label
   except ValueError:
     sys.stderr.write(str(data))
     return 0
