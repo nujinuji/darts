@@ -6,6 +6,7 @@ OPS = {
   'avg_pool_3x3' : lambda C, stride, affine: nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
   'max_pool_3x3' : lambda C, stride, affine: nn.MaxPool2d(3, stride=stride, padding=1),
   'max_pool_2x2' : lambda C, stride, affine: nn.MaxPool2d(2, stride=stride, padding=1),
+  'avg_pool_2x2' : lambda C, stride, affine: nn.AvgPool2d(2, stride=stride, padding=1, count_include_pad=False),
   'skip_connect' : lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
   'sep_conv_2x2' : lambda C, stride, affine: SepConv(C, C, 2, stride, 1, affine=affine),
   'dil_conv_2x2' : lambda C, stride, affine: DilConv(C, C, 2, stride, 2, 2, affine=affine),

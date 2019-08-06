@@ -7,6 +7,7 @@ PRIMITIVES = [
     'max_pool_3x3',
     'max_pool_2x2',
     'avg_pool_3x3',
+    'avg_pool_2x2',
     'skip_connect',
     'sep_conv_2x2',
     'dil_conv_2x2',
