@@ -50,7 +50,51 @@ fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
-CIFAR_CLASSES = 10
+CIFAR_CLASSES = 2
+
+def loader(path):
+  """Load data from given path
+
+  Parameters
+  ----------
+  path : str
+    file directory containing binding information
+
+  Returns
+  -------
+  tuple of numpy array and str
+    2d data matrix and its label
+  """
+  lbl = ['bind', 'not_bind'].index(path.split('/')[-2]) 
+  csv = pd.read_csv(path, sep='\t', header = None).values
+  '''
+  data = np.zeros((2, 5, 41))
+  data[0, :4, :] = csv[:4, :]
+  data[1, :, :] = csv[4:, :]
+  '''
+  data = csv
+  return data, lbl
+
+
+def transform(d):
+  """Transform data to tensor from NxHxW to NxCxHxW by adding 1 dimension
+
+  Parameters
+  ----------
+  d : pytorch.tensor
+    3d matrix of input sequence data
+
+  Returns
+  -------
+  tuple of torch.tensor and str
+    4d matrix of float with its label
+  """
+  data, label = d[0], d[1]
+  try:
+    return torch.tensor(data, dtype=torch.float32), label
+  except ValueError:
+    sys.stderr.write(str(data))
+    return 0
 
 
 def main():
@@ -83,14 +127,17 @@ def main():
       )
 
   train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
-  valid_data = dset.CIFAR10(root=args.data, train=False, download=True, transform=valid_transform)
+  train_data = dset.DatasetFolder(args.data, loader, ['ext'], transform=transform)
+
+  num_train = len(train_data)
+  indices = list(range(num_train))
+  split = int(np.floor(0.7 * num_train))
 
   train_queue = torch.utils.data.DataLoader(
-      train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
+      train_data[:split], batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
 
   valid_queue = torch.utils.data.DataLoader(
-      valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
+      train_data[split:], batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
 

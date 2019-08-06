@@ -28,6 +28,8 @@ class Cell(nn.Module):
   def _compile(self, C, op_names, indices, concat, reduction):
     assert len(op_names) == len(indices)
     self._steps = len(op_names) // 2
+
+    
     self._concat = concat
     self.multiplier = len(concat)
 

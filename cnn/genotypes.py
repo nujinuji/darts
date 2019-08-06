@@ -5,8 +5,11 @@ Genotype = namedtuple('Genotype', 'normal normal_concat reduce reduce_concat')
 PRIMITIVES = [
     'none',
     'max_pool_3x3',
+    'max_pool_2x2',
     'avg_pool_3x3',
     'skip_connect',
+    'sep_conv_2x2',
+    'dil_conv_2x2',
     'sep_conv_3x3',
     'sep_conv_5x5',
     'dil_conv_3x3',
@@ -76,3 +79,27 @@ DARTS_V2 = Genotype(normal=[('sep_conv_3x3', 0), ('sep_conv_3x3', 1), ('sep_conv
 
 DARTS = DARTS_V2
 
+DARTS_NEW = Genotype(
+  normal = [
+    ('sep_conv_2x2', 1),
+    ('sep_conv_2x2', 0),
+    ('sep_conv_3x3', 0),
+    ('avg_pool_2x2', 1),
+    ('skip_connect', 0),
+    ('avg_pool_3x3', 0),
+    ('avg_pool_2x2', 0),
+    ('skip_connect', 1),
+  ],
+  normal_concat = [4, 5, 6],
+  reduce = [
+    ('sep_conv_2x2', 1),
+    ('sep_conv_2x2', 0),
+    ('sep_conv_3x3', 0),
+    ('avg_pool_2x2', 1),
+    ('skip_connect', 0),
+    ('avg_pool_3x3', 0),
+    ('avg_pool_2x2', 0),
+    ('skip_connect', 1),
+  ],
+  reduce_concat = [4, 5, 6],
+)
