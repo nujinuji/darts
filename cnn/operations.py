@@ -32,9 +32,12 @@ class ReLUConvBN(nn.Module):
       nn.Conv2d(C_in, C_out, kernel_size, stride=stride, padding=padding, bias=False),
       nn.BatchNorm2d(C_out, affine=affine)
     )
+    print("ReLUConvBN" + kernel_size) #delete print
 
   def forward(self, x):
+    print("ReLUConvBN" + x.shape) #print
     return self.op(x)
+
 
 class DilConv(nn.Module):
     
@@ -46,8 +49,10 @@ class DilConv(nn.Module):
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
       )
+    print("DilConv kernel size: "kernel_size) #print
 
   def forward(self, x):
+    print("DilConv data dim: "x.shape) #print
     return self.op(x)
 
 
@@ -65,8 +70,10 @@ class SepConv(nn.Module):
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
       )
+    print("SepConv kernel size: " + kernel_size) #print
 
   def forward(self, x):
+    print("SepConv data dim: " + x.shape) #print
     return self.op(x)
 
 
@@ -88,6 +95,7 @@ class Zero(nn.Module):
   def forward(self, x):
     if self.stride == 1:
       return x.mul(0.)
+    print("Zero data dimension " + x.shape) #print
     return x[:,:,::self.stride,::self.stride].mul(0.)
 
 
@@ -106,5 +114,6 @@ class FactorizedReduce(nn.Module):
     # correction of dimension mismatch error
     out = torch.cat([self.conv_1(x), self.conv_2(x[:,:,:,:])], dim=1)
     out = self.bn(out)
+    print("FactorizedReduce data dimension " + x.shape) #print
     return out
 
