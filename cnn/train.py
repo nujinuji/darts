@@ -3,6 +3,7 @@ import sys
 import time
 import glob
 import numpy as np
+import pandas as pd
 import torch
 import utils
 import logging
@@ -73,7 +74,7 @@ def loader(path):
   data[1, :, :] = csv[4:, :]
   '''
   data = csv
-  return data, lbl
+  return data
 
 
 def transform(d):
@@ -133,11 +134,12 @@ def main():
   indices = list(range(num_train))
   split = int(np.floor(0.7 * num_train))
 
+
   train_queue = torch.utils.data.DataLoader(
-      train_data[:split], batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
+      train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
 
   valid_queue = torch.utils.data.DataLoader(
-      train_data[split:], batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
+      train_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
 
@@ -162,6 +164,7 @@ def train(train_queue, model, criterion, optimizer):
   model.train()
 
   for step, (input, target) in enumerate(train_queue):
+    input = input[0]
     input = Variable(input).cuda()
     target = Variable(target).cuda(async=True)
 
