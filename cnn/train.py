@@ -74,7 +74,7 @@ def loader(path):
   data[1, :, :] = csv[4:, :]
   '''
   data = csv
-  return data
+  return data, lbl
 
 
 def transform(d):
@@ -92,7 +92,7 @@ def transform(d):
   """
   data, label = d[0], d[1]
   try:
-    return torch.tensor(data, dtype=torch.float32), label
+    return torch.tensor(data, dtype=torch.float32).view(1, 9, 41), label
   except ValueError:
     sys.stderr.write(str(data))
     return 0
@@ -165,6 +165,7 @@ def train(train_queue, model, criterion, optimizer):
 
   for step, (input, target) in enumerate(train_queue):
     input = input[0]
+    print(input.shape)
     input = Variable(input).cuda()
     target = Variable(target).cuda(async=True)
 

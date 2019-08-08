@@ -1,12 +1,20 @@
 import torch
 import torch.nn as nn
 
+def avg_pool_wrap(kernel_size):
+    print('AvgPool kernel size: {}'.format(kernel_size))
+    return lambda C, stride, affine: nn.AvgPool2d(kernel_size, stride = stride, padding=1, count_include_pad=False)
+
+def max_pool_wrap(kernel_size):
+    print('MaxPool kernel size: {}'.format(kernel_size))
+    return lambda C, stride, affine: nn.MaxPool2d(kernel_size, stride = stride, padding=1)
+
 OPS = {
   'none' : lambda C, stride, affine: Zero(stride),
-  'avg_pool_3x3' : lambda C, stride, affine: nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
-  'max_pool_3x3' : lambda C, stride, affine: nn.MaxPool2d(3, stride=stride, padding=1),
-  'max_pool_2x2' : lambda C, stride, affine: nn.MaxPool2d(2, stride=stride, padding=1),
-  'avg_pool_2x2' : lambda C, stride, affine: nn.AvgPool2d(2, stride=stride, padding=1, count_include_pad=False),
+  'avg_pool_3x3' : avg_pool_wrap(3),
+  'max_pool_3x3' : max_pool_wrap(3),
+  'max_pool_2x2' : max_pool_wrap(2),
+  'avg_pool_2x2' : avg_pool_wrap(2),
   'skip_connect' : lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
   'sep_conv_2x2' : lambda C, stride, affine: SepConv(C, C, 2, stride, 1, affine=affine),
   'dil_conv_2x2' : lambda C, stride, affine: DilConv(C, C, 2, stride, 2, 2, affine=affine),

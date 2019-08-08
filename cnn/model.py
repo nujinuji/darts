@@ -146,6 +146,8 @@ class NetworkCIFAR(nn.Module):
     self.classifier = nn.Linear(C_prev, num_classes)
 
   def forward(self, input):
+    print('in networkCIFAR.forward')
+    print(input.shape)
     logits_aux = None
     s0 = s1 = self.stem(input)
     for i, cell in enumerate(self.cells):
