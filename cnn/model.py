@@ -120,7 +120,7 @@ class NetworkCIFAR(nn.Module):
     stem_multiplier = 3
     C_curr = stem_multiplier*C
     self.stem = nn.Sequential(
-      nn.Conv2d(1, C_curr, 1, padding=1, bias=False),
+      nn.Conv2d(1, C_curr, 3, padding=1, bias=False),
       nn.BatchNorm2d(C_curr)
     )
     
@@ -134,6 +134,8 @@ class NetworkCIFAR(nn.Module):
       else:
         reduction = False
       cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
+      print('Cell created at layer {}'.format(i))
+      print(genotype)
       reduction_prev = reduction
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, cell.multiplier*C_curr
