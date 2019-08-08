@@ -39,6 +39,9 @@ class Cell(nn.Module):
       op = OPS[name](C, stride, True)
       self._ops += [op]
     self._indices = indices
+    print('self._steps: {}'.format(self._steps))
+    print('self._concat: {}'.format(self._concat))
+    print('self._indices: {}'.format(self._indices))
 
   def forward(self, s0, s1, drop_prob):
     s0 = self.preprocess0(s0)
@@ -114,6 +117,7 @@ class NetworkCIFAR(nn.Module):
 
   def __init__(self, C, num_classes, layers, auxiliary, genotype):
     super(NetworkCIFAR, self).__init__()
+    print('in networkCIFAR')
     self._layers = layers
     self._auxiliary = auxiliary
 
