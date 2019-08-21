@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd 
 from sklearn.svm import SVC
 import sys
+import os
 
 t = {'bind': 1, 'not_bind': 0}
 
