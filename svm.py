@@ -14,7 +14,7 @@ def load_data(l):
 		c = pd.read_csv(i, sep='\t', header = None).values.flatten()
 		res.append(c)
 		labels.append(label)
-	return res, label 
+	return res, labels
 
 def train(x, y):
 	svc = SVC()
