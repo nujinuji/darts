@@ -27,7 +27,7 @@ def test(svc, x, y):
 def main(train_path, test_path):
 	print('loading dataset')
 	train_x, train_y = load_data([os.path.join(train_path, 'bind', x) for x in os.listdir(os.path.join(train_path, 'bind'))] + [os.path.join(train_path, 'not_bind', x) for x in os.listdir(os.path.join(train_path, 'not_bind'))])
-	test_x, test_y = load_data([os.path.join(test_path, 'bind', x) for x in os.listdir(os.path.join(test_path, 'bind'))] + [os.path.join(test_path, 'not_bind', x) for x in os.listdir(os.path.join(test_path, 'not_bind'))])
+	test_x, test_y = train_x, train_y#load_data([os.path.join(test_path, 'bind', x) for x in os.listdir(os.path.join(test_path, 'bind'))] + [os.path.join(test_path, 'not_bind', x) for x in os.listdir(os.path.join(test_path, 'not_bind'))])
 	print('training')
 	c = train(train_x, train_y)
 	print('testing')
