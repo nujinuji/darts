@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd 
 from sklearn.svm import SVC
+import sys
 
 t = {'bind': 1, 'not_bind': 0}
 
@@ -31,3 +32,6 @@ def main(train, test):
 	print('testing')
 	train_acc, test_acc = test(c, train_x, train_y), test(c, test_x, test_y)
 	print('train_acc: %f, test_acc: %f' % (train_acc, test_acc))
+
+if __name__ == '__main__':
+	main(sys.argv[1], sys.argv[2])
