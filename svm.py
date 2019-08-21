@@ -24,10 +24,10 @@ def train(x, y):
 def test(svc, x, y):
 	return svc.score(x, y)
 
-def main(train, test):
+def main(train_path, test_path):
 	print('loading dataset')
-	train_x, train_y = load_data([os.path.join(train, 'bind', x) for x in os.listdir(os.path.join(train, 'bind'))] + [os.path.join(train, 'not_bind', x) for x in os.listdir(os.path.join(train, 'not_bind'))])
-	test_x, test_y = load_data([os.path.join(test, 'bind', x) for x in os.listdir(os.path.join(test, 'bind'))] + [os.path.join(test, 'not_bind', x) for x in os.listdir(os.path.join(test, 'not_bind'))])
+	train_x, train_y = load_data([os.path.join(train_path, 'bind', x) for x in os.listdir(os.path.join(train_path, 'bind'))] + [os.path.join(train_path, 'not_bind', x) for x in os.listdir(os.path.join(train_path, 'not_bind'))])
+	test_x, test_y = load_data([os.path.join(test_path, 'bind', x) for x in os.listdir(os.path.join(test_path, 'bind'))] + [os.path.join(test_path, 'not_bind', x) for x in os.listdir(os.path.join(test_path, 'not_bind'))])
 	print('training')
 	c = train(train_x, train_y)
 	print('testing')
