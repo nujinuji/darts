@@ -17,13 +17,13 @@ class simpleCNN(nn.Module):
         self.conv1 = nn.Conv2d(1, 3, 3)
         self.pool = nn.MaxPool2d(2)
         self.conv2 = nn.Conv2d(3, 6, 3)
-        self.fc1 = nn.Linear(6*5*5, 27)
+        self.fc1 = nn.Linear(48, 27)
         self.fc2 = nn.Linear(27, 2)
 
     def forward(self, x):
-        x = nn.functional.relu(self.conv1(x))
-        x = nn.functional.relu(self.conv2(x))
-        x = x.view(-1, 6*5*5)
+        x = self.pool(nn.functional.relu(self.conv1(x)))
+        x = self.pool(nn.functional.relu(self.conv2(x)))
+        x = x.view(x.shape[0], 48)
         x = nn.functional.relu(self.fc1(x))
         x = self.fc2(x)
         return x
@@ -111,20 +111,21 @@ def main(train_path, test_path):
         running_loss = 0.0
         train_total, train_correct = 0, 0
         valid_total, valid_correct = 0, 0
-        for step, (input, labels) in train_queue:
+        for step, (input, labels) in enumerate(train_queue):
             input = input[0].cuda()
+            labels = labels.cuda()
             optimizer.zero_grad()
             outputs = net(input)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            train_total += labels.size[0]
+            train_total += labels.size(0)
             _, predicted = torch.max(outputs.data, 1)
             train_correct += (predicted == labels).sum().item()
-        for step, (input, labels) in valid_queue:
+        for step, (input, labels) in enumerate(valid_queue):
             input = input[0].cuda()
             outputs = net(input)
-            valid_total += labels.size[0]
+            valid_total += labels.size(0)
             _, predicted = torch.max(outputs.data, 1)
             valid_correct += (predicted == labels).sum().item()
         print('at epoch %d: train_acc: %f, test_acc: %f' % (epoch, float(train_correct) / train_total, float(valid_correct) / valid_total))
