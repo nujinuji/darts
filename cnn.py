@@ -124,6 +124,7 @@ def main(train_path, test_path):
             train_correct += (predicted == labels).sum().item()
         for step, (input, labels) in enumerate(valid_queue):
             input = input[0].cuda()
+            labels = labels.cuda()
             outputs = net(input)
             valid_total += labels.size(0)
             _, predicted = torch.max(outputs.data, 1)
