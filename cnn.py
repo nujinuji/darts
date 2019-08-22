@@ -10,7 +10,7 @@ import os
 
 t = {'bind': 1, 'not_bind': 0}
 
-class simpleCNN(nn.module):
+class simpleCNN(nn.Module):
 
     def __init__(self):
         super(simpleCNN, self).__init__()
