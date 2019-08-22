@@ -101,10 +101,10 @@ def main(train_path, test_path):
     train_data = dset.DatasetFolder(train_path, loader, ['ext'], transform=transform)
     test_data = dset.DatasetFolder(test_path, loader, ['ext'], transform=transform)
     train_queue = torch.utils.data.DataLoader(
-        train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
+        train_data, batch_size=64, shuffle=True, pin_memory=True, num_workers=2)
 
     valid_queue = torch.utils.data.DataLoader(
-        train_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
+        train_data, batch_size=64, shuffle=False, pin_memory=True, num_workers=2)
 
     print('training')
     for epoch in range(100):
