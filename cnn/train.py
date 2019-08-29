@@ -53,28 +53,88 @@ logging.getLogger().addHandler(fh)
 
 CIFAR_CLASSES = 2
 
-def loader(path):
+# define binding threshould and maximum sequence length
+CUTOFF = 0
+MAX_LEN = 41
+
+def zero_padding(holder, length, separator):
+  """Make shorter sequences zero-padded
+
+  Parameters
+  ----------
+  holder : str
+    zeros for matrix padding
+  length : int
+    length that need to pad at the end of shorter sequences
+  separator : str
+    tab separated
+
+  Returns
+  -------
+  str
+    sequence with zero padding
+  """
+  return separator.join([holder] * int(length))
+
+
+def loader(annofile, seqfile):
   """Load data from given path
 
   Parameters
   ----------
-  path : str
-    file directory containing binding information
+  annofile : str
+    file name of annotation file. format: <seq> <struct matrix>
+
+  seqfile : str
+    file name of sequence file. format: <bind score> <seq>
 
   Returns
   -------
   tuple of numpy array and str
     2d data matrix and its label
   """
+  '''
   lbl = ['bind', 'not_bind'].index(path.split('/')[-2]) 
   csv = pd.read_csv(path, sep='\t', header = None).values
-  '''
+  
   data = np.zeros((2, 5, 41))
   data[0, :4, :] = csv[:4, :]
   data[1, :, :] = csv[4:, :]
-  '''
+  
   data = csv
-  return data, lbl
+  '''
+  with open(annofile) as anno_file:
+    with open(seqfile) as seq_file:
+      for seq_line in seq_file:
+        affinity = float(seq_line.split(' ')[0])
+        seq = anno_file.readline()[1:].strip()
+        A = np.array(list(seq))
+        A[A != 'A'] = '0'
+        A[A == 'A'] = '1'
+        A = A.tolist()
+        T = np.array(list(seq))
+        T[T != 'T'] = '0'
+        T[T == 'T'] = '1'
+        T = T.tolist()
+        C = np.array(list(seq))
+        C[C != 'C'] = '0'
+        C[C == 'C'] = '1'
+        C = C.tolist()
+        G = np.array(list(seq))
+        G[G != 'G'] = '0'
+        G[G == 'G'] = '1'
+        G = G.tolist()
+        res = []
+        res.append(('%s\t%s' % ('\t'.join(A), zero_padding('0', MAX_LEN - int(len(A)), '\t'))).strip().rstrip())
+        res.append(('%s\t%s' % ('\t'.join(T), zero_padding('0', MAX_LEN - int(len(T)), '\t'))).strip().rstrip())
+        res.append(('%s\t%s' % ('\t'.join(C), zero_padding('0', MAX_LEN - int(len(C)), '\t'))).strip().rstrip())
+        res.append(('%s\t%s' % ('\t'.join(G), zero_padding('0', MAX_LEN - int(len(G)), '\t'))).strip().rstrip())
+
+        for i in range(5):
+          res.append((anno_file.readline().lstrip().strip() + '\t' + zero_padding('0', MAX_LEN - int(len(A)), '\t')).strip().rstrip())
+
+        data = np.array([[float(i) for i in x.split('\t')] for x in res])
+  return data, affinity
 
 
 def transform(d):
