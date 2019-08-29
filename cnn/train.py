@@ -103,38 +103,29 @@ def loader(annofile, seqfile):
   
   data = csv
   '''
+  res = []
+  affinity = []
   with open(annofile) as anno_file:
     with open(seqfile) as seq_file:
       for seq_line in seq_file:
-        affinity = float(seq_line.split(' ')[0])
+        
+        # Get affinity and sequence; then transform sequence to numpy array of characters  
+        affinity.append(float(seq_line.split(' ')[0]))
         seq = anno_file.readline()[1:].strip()
-        A = np.array(list(seq))
-        A[A != 'A'] = '0'
-        A[A == 'A'] = '1'
-        A = A.tolist()
-        T = np.array(list(seq))
-        T[T != 'T'] = '0'
-        T[T == 'T'] = '1'
-        T = T.tolist()
-        C = np.array(list(seq))
-        C[C != 'C'] = '0'
-        C[C == 'C'] = '1'
-        C = C.tolist()
-        G = np.array(list(seq))
-        G[G != 'G'] = '0'
-        G[G == 'G'] = '1'
-        G = G.tolist()
-        res = []
-        res.append(('%s\t%s' % ('\t'.join(A), zero_padding('0', MAX_LEN - int(len(A)), '\t'))).strip().rstrip())
-        res.append(('%s\t%s' % ('\t'.join(T), zero_padding('0', MAX_LEN - int(len(T)), '\t'))).strip().rstrip())
-        res.append(('%s\t%s' % ('\t'.join(C), zero_padding('0', MAX_LEN - int(len(C)), '\t'))).strip().rstrip())
-        res.append(('%s\t%s' % ('\t'.join(G), zero_padding('0', MAX_LEN - int(len(G)), '\t'))).strip().rstrip())
+        seq_numpy = np.array(list(seq))
 
-        for i in range(5):
-          res.append((anno_file.readline().lstrip().strip() + '\t' + zero_padding('0', MAX_LEN - int(len(A)), '\t')).strip().rstrip())
+        # Create empty 2D matrix and fill with one-hot representations
+        mat = np.zeros((9, MAX_LEN))
+        for i, c in enumerate('ATCG'):
+          mat[i, :len(seq)] = (seq_numpy == c).astype(float)
 
-        data = np.array([[float(i) for i in x.split('\t')] for x in res])
-  return data, affinity
+        # Append profile
+        for i in range(4, 9):
+          profile = anno_file.readline().lstrip().strip().split('\t')
+          mat[i, :len(seq)] = [float(x) for x in profile]
+
+        res.append(mat)
+  return torch.tensor(res, dtype=torch.float), torch.tensor(affinity, dtype=torch.float)
 
 
 def transform(d):
