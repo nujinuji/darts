@@ -124,7 +124,7 @@ def loader(annofile, seqfile):
           profile = anno_file.readline().lstrip().strip().split('\t')
           mat[i, :len(seq)] = [float(x) for x in profile]
 
-        res.append(mat)
+        res.append([mat])
   return torch.tensor(res, dtype=torch.float), torch.tensor(affinity, dtype=torch.float)
 
 
