@@ -21,7 +21,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser("cifar")
   parser.add_argument('--annofile', type=str, default='../dlprb_train/RNCMPT00001.txt.annotations.RNAcontext-sample', help='location of the annotation file')
   parser.add_argument('--seqfile', type=str, default='../dlprb_train/RNCMPT00001.txt.sequences.RNAcontext.clamp-sample', help='location of the sequence file')
-  parser.add_argument('--batch_size', type=int, default=96, help='batch size')
+  parser.add_argument('--batch_size', type=int, default=64, help='batch size')
   parser.add_argument('--learning_rate', type=float, default=0.025, help='init learning rate')
   parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
   parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
@@ -119,10 +119,6 @@ class BindingDataset(torch.utils.data.Dataset):
   def __getitem__(self, idx):
     return self.dataset[idx, :, :, :], self.labels[idx]
 
-def create_queue(data, batch_size):
-  return 0
-
-
 def main(args):
   if not torch.cuda.is_available():
     logging.info('no gpu device available')
@@ -188,7 +184,6 @@ def train(train_queue, model, criterion, optimizer):
   model.train()
 
   for step, (input, target) in enumerate(train_queue):
-    input = input[0]
     print(input.shape)
     input = Variable(input).cuda()
     target = Variable(target).cuda(async=True)
