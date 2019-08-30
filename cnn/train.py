@@ -164,8 +164,6 @@ def main(args):
   valid_queue = torch.utils.data.DataLoader(
       train_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
 
-  print(train_queue)
-  '''
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
 
   for epoch in range(args.epochs):
@@ -180,7 +178,7 @@ def main(args):
     logging.info('valid_acc %f', valid_acc)
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
-  '''
+  
 
 
 def train(train_queue, model, criterion, optimizer):
