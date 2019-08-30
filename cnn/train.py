@@ -119,7 +119,7 @@ class BindingDataset(torch.utils.data.Dataset):
     return self.dataset[idx, :, :, :]
 
 def create_queue(data, batch_size):
-
+  return 0
 
 
 def main(args):
