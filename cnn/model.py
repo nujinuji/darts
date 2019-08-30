@@ -162,6 +162,7 @@ class NetworkCIFAR(nn.Module):
         if self._auxiliary and self.training:
           logits_aux = self.auxiliary_head(s1)
     out = s1
+    print(out.shape)
     logits = self.classifier(out.view(out.size(0),-1))
     return logits, logits_aux
 
