@@ -111,13 +111,13 @@ class BindingDataset(torch.utils.data.Dataset):
     return torch.tensor(res, dtype=torch.float), torch.tensor(affinity, dtype=torch.float)
 
   def __init__(self, annofile, seqfile, transform = None):
-    self.dataset = self.loader(annofile, seqfile)
+    self.dataset, self.labels = self.loader(annofile, seqfile)
 
   def __len__(self):
-    return self.dataset.shape[0]
+    return self.labels.shape[0]
 
   def __getitem__(self, idx):
-    return self.dataset[idx, :, :, :]
+    return self.dataset[idx, :, :, :], self.labels[idx]
 
 def create_queue(data, batch_size):
   return 0
