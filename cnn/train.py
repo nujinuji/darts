@@ -60,8 +60,7 @@ MAX_LEN = 41
 
 class BindingDataset(torch.utils.data.Dataset):
 
-  @staticmethod
-  def __loader(annofile, seqfile):
+  def loader(self, annofile, seqfile):
     """Load data from given path
 
     Parameters
@@ -112,7 +111,7 @@ class BindingDataset(torch.utils.data.Dataset):
     return torch.tensor(res, dtype=torch.float), torch.tensor(affinity, dtype=torch.float)
 
   def __init__(self, annofile, seqfile, transform = None):
-    self.dataset = __loader(annofile, seqfile)
+    self.dataset = self.loader(annofile, seqfile)
 
   def __len__(self):
     return self.dataset.shape[0]
