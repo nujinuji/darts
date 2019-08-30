@@ -59,6 +59,8 @@ CUTOFF = 0
 MAX_LEN = 41
 
 class BindingDataset(torch.utils.data.Dataset):
+
+  @staticmethod
   def __loader(annofile, seqfile):
     """Load data from given path
 
