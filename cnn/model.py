@@ -161,9 +161,11 @@ class NetworkCIFAR(nn.Module):
       if i == 2*self._layers//3:
         if self._auxiliary and self.training:
           logits_aux = self.auxiliary_head(s1)
-    out = s1
+    out = self.global_pooling(s1)
     print(out.shape)
-    logits = self.classifier(out.view(out.size(0),-1))
+    #logits = self.classifier(out.view(out.size(0),-1))
+    logits = out
+    print(logits)
     return logits, logits_aux
 
 
