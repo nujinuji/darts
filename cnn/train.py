@@ -202,7 +202,7 @@ def train(train_queue, model, criterion, optimizer):
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
 
-    pearson = pearson_corr(logits, target)
+    pearson = pearson_corr(logits.flatten(), target)
 
     n = input.size(0)
     if input.size(0) != 48:
@@ -234,7 +234,7 @@ def infer(valid_queue, model, criterion):
       objs.update(loss.data.item(), n)
       top1.update(logits, n)
 
-    pearson = pearson_corr(logits, target)
+    pearson = pearson_corr(logits.flatten(), target)
     if step % args.report_freq == 0:
       print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
       logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
