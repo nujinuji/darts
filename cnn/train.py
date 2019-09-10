@@ -179,7 +179,7 @@ def main(args):
 def pearson_corr(x, y):
   vx = x - torch.mean(x)
   vy = y - torch.mean(y)
-  return vx * vy * torch.rsqrt(torch.sum(vx ** 2)) * torch.rsqrt(torch.sum(vy ** 2)))
+  return vx * vy * torch.rsqrt(torch.sum(vx ** 2)) * torch.rsqrt(torch.sum(vy ** 2))
 
 
 
