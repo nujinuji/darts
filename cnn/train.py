@@ -38,7 +38,7 @@ if __name__ == '__main__':
   parser.add_argument('--drop_path_prob', type=float, default=0.2, help='drop path probability')
   parser.add_argument('--save', type=str, default='EXP', help='experiment name')
   parser.add_argument('--seed', type=int, default=0, help='random seed')
-  parser.add_argument('--arch', type=str, default='DARTS_NEW', help='which architecture to use')
+  parser.add_argument('--arch', type=str, default='DARTS', help='which architecture to use')
   parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
   args = parser.parse_args()
 
@@ -139,7 +139,7 @@ def main(args):
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
-  criterion = nn.CrossEntropyLoss()
+  criterion = nn.MSELoss()
   criterion = criterion.cuda()
   optimizer = torch.optim.SGD(
       model.parameters(),
@@ -184,7 +184,6 @@ def train(train_queue, model, criterion, optimizer):
   model.train()
 
   for step, (input, target) in enumerate(train_queue):
-    print(input.shape)
     input = Variable(input).cuda()
     target = Variable(target).cuda(async=True)
 
@@ -198,14 +197,14 @@ def train(train_queue, model, criterion, optimizer):
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
     n = input.size(0)
-    objs.update(loss.data.item(), n)
-    top1.update(prec1.data.item(), n)
-    top5.update(prec5.data.item(), n)
-
+    if input.size(0) != 48:
+      objs.update(loss.data.item(), n)
+      top1.update(logits, n)
     if step % args.report_freq == 0:
-      logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), torch.mean(logits)))
+    #if step % args.report_freq == 0:
+      #logging.info('train %03d %e %f', step, objs.avg, top1.avg)
 
   return top1.avg, objs.avg
 
@@ -217,21 +216,21 @@ def infer(valid_queue, model, criterion):
   model.eval()
 
   for step, (input, target) in enumerate(valid_queue):
-    input = input[0]
     input = Variable(input, volatile=True).cuda()
     target = Variable(target, volatile=True).cuda(async=True)
 
     logits, _ = model(input)
     loss = criterion(logits, target)
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
     n = input.size(0)
-    objs.update(loss.data.item(), n)
-    top1.update(prec1.data.item(), n)
-    top5.update(prec5.data.item(), n)
-
+    if input.size(0) != 48:
+      objs.update(loss.data.item(), n)
+      top1.update(logits, n)
     if step % args.report_freq == 0:
-      logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), torch.mean(logits)))
+
+    #if step % args.report_freq == 0:
+      #logging.info('valid %03d %e %f', step, objs.avg, top1.avg)
 
   return top1.avg, objs.avg
 

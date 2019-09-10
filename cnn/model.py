@@ -9,7 +9,6 @@ class Cell(nn.Module):
 
   def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
-    print(C_prev_prev, C_prev, C)
 
     if reduction_prev:
       self.preprocess0 = FactorizedReduce(C_prev_prev, C)
@@ -39,9 +38,9 @@ class Cell(nn.Module):
       op = OPS[name](C, stride, True)
       self._ops += [op]
     self._indices = indices
-    print('self._steps: {}'.format(self._steps))
-    print('self._concat: {}'.format(self._concat))
-    print('self._indices: {}'.format(self._indices))
+    #print('self._steps: {}'.format(self._steps))
+    #print('self._concat: {}'.format(self._concat))
+    #print('self._indices: {}'.format(self._indices))
 
   def forward(self, s0, s1, drop_prob):
     s0 = self.preprocess0(s0)
@@ -117,7 +116,7 @@ class NetworkCIFAR(nn.Module):
 
   def __init__(self, C, num_classes, layers, auxiliary, genotype):
     super(NetworkCIFAR, self).__init__()
-    print('in networkCIFAR')
+    #print('in networkCIFAR')
     self._layers = layers
     self._auxiliary = auxiliary
 
@@ -138,8 +137,8 @@ class NetworkCIFAR(nn.Module):
       else:
         reduction = False
       cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
-      print('Cell created at layer {}'.format(i))
-      print(genotype)
+      #print('Cell created at layer {}'.format(i))
+      #print(genotype)
       reduction_prev = reduction
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, cell.multiplier*C_curr
@@ -152,8 +151,8 @@ class NetworkCIFAR(nn.Module):
     self.classifier = nn.Sequential(nn.Linear(C_prev, 10), nn.Linear(10, 1))
 
   def forward(self, input):
-    print('in networkCIFAR.forward')
-    print(input.shape)
+    #print('in networkCIFAR.forward')
+    #print(input.shape)
     logits_aux = None
     s0 = s1 = self.stem(input)
     for i, cell in enumerate(self.cells):
@@ -162,10 +161,7 @@ class NetworkCIFAR(nn.Module):
         if self._auxiliary and self.training:
           logits_aux = self.auxiliary_head(s1)
     out = self.global_pooling(s1)
-    print(out.shape)
-    #logits = self.classifier(out.view(out.size(0),-1))
-    logits = out
-    print(logits)
+    logits = self.classifier(out.view(out.size(0),-1))
     return logits, logits_aux
 
 

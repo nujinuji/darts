@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 
 def avg_pool_wrap(kernel_size):
-    print('AvgPool kernel size: {}'.format(kernel_size))
+    #print('AvgPool kernel size: {}'.format(kernel_size))
     return lambda C, stride, affine: nn.AvgPool2d(kernel_size, stride = stride, padding=1, count_include_pad=False)
 
 def max_pool_wrap(kernel_size):
-    print('MaxPool kernel size: {}'.format(kernel_size))
+    #print('MaxPool kernel size: {}'.format(kernel_size))
     return lambda C, stride, affine: nn.MaxPool2d(kernel_size, stride = stride, padding=1)
 
 OPS = {
@@ -40,10 +40,10 @@ class ReLUConvBN(nn.Module):
       nn.Conv2d(C_in, C_out, kernel_size, stride=stride, padding=padding, bias=False),
       nn.BatchNorm2d(C_out, affine=affine)
     )
-    print("ReLUConvBN.init {}".format(kernel_size)) #delete print
+    #print("ReLUConvBN.init {}".format(kernel_size)) #delete print
 
   def forward(self, x):
-    print("ReLUConvBN.forward {}".format(x.shape)) #print
+    #print("ReLUConvBN.forward {}".format(x.shape)) #print
     return self.op(x)
 
 
@@ -57,10 +57,10 @@ class DilConv(nn.Module):
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
       )
-    print("DilConv kernel size: {}".format(kernel_size)) #print
+    #print("DilConv kernel size: {}".format(kernel_size)) #print
 
   def forward(self, x):
-    print("DilConv data dim: {}".format(x.shape)) #print
+    #print("DilConv data dim: {}".format(x.shape)) #print
     return self.op(x)
 
 
@@ -78,10 +78,10 @@ class SepConv(nn.Module):
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
       )
-    print("SepConv kernel size: {}".format(kernel_size)) #print
+    #print("SepConv kernel size: {}".format(kernel_size)) #print
 
   def forward(self, x):
-    print("SepConv data dim: {}".format(x.shape)) #print
+    #print("SepConv data dim: {}".format(x.shape)) #print
     return self.op(x)
 
 
@@ -99,7 +99,7 @@ class Zero(nn.Module):
   def __init__(self, stride):
     super(Zero, self).__init__()
     self.stride = stride
-    print('Zero')
+    #print('Zero')
 
   def forward(self, x):
     if self.stride == 1:
@@ -117,13 +117,13 @@ class FactorizedReduce(nn.Module):
     self.conv_1 = nn.Conv2d(C_in, C_out // 2, 1, stride=2, padding=0, bias=False)
     self.conv_2 = nn.Conv2d(C_in, C_out // 2, 1, stride=2, padding=0, bias=False) 
     self.bn = nn.BatchNorm2d(C_out, affine=affine)
-    print('FactorizedReduce')
+    #print('FactorizedReduce')
 
   def forward(self, x):
     x = self.relu(x)
     # correction of dimension mismatch error
     out = torch.cat([self.conv_1(x), self.conv_2(x[:,:,:,:])], dim=1)
     out = self.bn(out)
-    print("FactorizedReduce data dimension {}".format(x.shape)) #print
+    #print("FactorizedReduce data dimension {}".format(x.shape)) #print
     return out
 
