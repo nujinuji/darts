@@ -182,7 +182,6 @@ def pearson_corr(x, y):
   return vx.dot(vy) / (torch.norm(vx, 2) * torch.norm(vy, 2))
 
 
-
 def train(train_queue, model, criterion, optimizer):
   objs = utils.AvgrageMeter()
   top1 = utils.AvgrageMeter()
