@@ -176,6 +176,12 @@ def main(args):
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   
 
+def pearson_corr(x, y):
+  vx = x - torch.mean(x)
+  vy = y - torch.mean(y)
+  return vx * vy * torch.rsqrt(torch.sum(vx ** 2)) * torch.rsqrt(torch.sum(vy ** 2)))
+
+
 
 def train(train_queue, model, criterion, optimizer):
   objs = utils.AvgrageMeter()
@@ -197,13 +203,15 @@ def train(train_queue, model, criterion, optimizer):
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
 
+    pearson = pearson_corr(logits, target)
+
     n = input.size(0)
     if input.size(0) != 48:
       objs.update(loss.data.item(), n)
       top1.update(logits, n)
     if step % args.report_freq == 0:
-      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), torch.mean(logits)))
-    #if step % args.report_freq == 0:
+      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
+      logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
       #logging.info('train %03d %e %f', step, objs.avg, top1.avg)
 
   return top1.avg, objs.avg
@@ -226,10 +234,11 @@ def infer(valid_queue, model, criterion):
     if input.size(0) != 48:
       objs.update(loss.data.item(), n)
       top1.update(logits, n)
-    if step % args.report_freq == 0:
-      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), torch.mean(logits)))
 
-    #if step % args.report_freq == 0:
+    pearson = pearson_corr(logits, target)
+    if step % args.report_freq == 0:
+      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
+      logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
       #logging.info('valid %03d %e %f', step, objs.avg, top1.avg)
 
   return top1.avg, objs.avg
