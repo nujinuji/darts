@@ -17,7 +17,7 @@ class AvgrageMeter(object):
     self.cnt = 0
 
   def update(self, val, n=1):
-    self.sum += val * n
+    self.sum += sum(val) * n
     self.cnt += n
     self.avg = self.sum / self.cnt
 
