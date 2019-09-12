@@ -29,7 +29,7 @@ if __name__ == '__main__':
   parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
   parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
   parser.add_argument('--init_channels', type=int, default=36, help='num of init channels')
-  parser.add_argument('--layers', type=int, default=20, help='total number of layers')
+  parser.add_argument('--layers', type=int, default=2, help='total number of layers')
   parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
   parser.add_argument('--auxiliary', action='store_true', default=False, help='use auxiliary tower')
   parser.add_argument('--auxiliary_weight', type=float, default=0.4, help='weight for auxiliary loss')
@@ -149,6 +149,7 @@ def main(args):
       )
 
   train_data = BindingDataset(args.annofile, args.seqfile)
+  valid_data = BindingDataset(args.annofile, args.seqfile)
 
   num_train = len(train_data)
   indices = list(range(num_train))
@@ -158,7 +159,7 @@ def main(args):
       train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
 
   valid_queue = torch.utils.data.DataLoader(
-      train_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
+      valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
 
@@ -170,8 +171,8 @@ def main(args):
     train_acc, train_obj = train(train_queue, model, criterion, optimizer)
     logging.info('train_acc %f', train_acc)
 
-    #valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    #logging.info('valid_acc %f', valid_acc)
+    valid_acc, valid_obj = infer(valid_queue, model, criterion)
+    logging.info('valid_acc %f', valid_acc)
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   
@@ -212,6 +213,10 @@ def train(train_queue, model, criterion, optimizer):
       print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
       logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
       #logging.info('train %03d %e %f', step, objs.avg, top1.avg)
+    
+    del input
+    del target
+    torch.cuda.empty_cache()
 
   return top1.avg, objs.avg
 
@@ -219,9 +224,10 @@ def train(train_queue, model, criterion, optimizer):
 def infer(valid_queue, model, criterion):
   objs = utils.AvgrageMeter()
   top1 = utils.AvgrageMeter()
-  top5 = utils.AvgrageMeter()
   model.eval()
+  print('1')
 
+  print(len(valid_queue))
   for step, (input, target) in enumerate(valid_queue):
     input = Variable(input, volatile=True).cuda()
     target = Variable(target, volatile=True).cuda(async=True)
@@ -229,9 +235,9 @@ def infer(valid_queue, model, criterion):
     logits, _ = model(input)
     loss = criterion(logits, target)
 
+    pearson = pearson_corr(logits.flatten(), target)
     n = input.size(0)
     if input.size(0) != 48:
-      pearson = pearson_corr(logits.flatten(), target)
       objs.update(loss.data.item(), n)
       top1.update(pearson, n)
       #top1.update(logits, n)
@@ -240,6 +246,10 @@ def infer(valid_queue, model, criterion):
       print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
       logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
       #logging.info('valid %03d %e %f', step, objs.avg, top1.avg)
+
+    del input
+    del target
+    torch.cuda.empty_cache()
 
   return top1.avg, objs.avg
 
