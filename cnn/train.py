@@ -170,8 +170,8 @@ def main(args):
     train_acc, train_obj = train(train_queue, model, criterion, optimizer)
     logging.info('train_acc %f', train_acc)
 
-    valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    logging.info('valid_acc %f', valid_acc)
+    #valid_acc, valid_obj = infer(valid_queue, model, criterion)
+    #logging.info('valid_acc %f', valid_acc)
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   
@@ -231,10 +231,11 @@ def infer(valid_queue, model, criterion):
 
     n = input.size(0)
     if input.size(0) != 48:
+      pearson = pearson_corr(logits.flatten(), target)
       objs.update(loss.data.item(), n)
-      top1.update(logits, n)
+      top1.update(pearson, n)
+      #top1.update(logits, n)
 
-    pearson = pearson_corr(logits.flatten(), target)
     if step % args.report_freq == 0:
       print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
       logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
