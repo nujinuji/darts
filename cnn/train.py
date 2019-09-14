@@ -13,19 +13,24 @@ import genotypes
 import torch.utils
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
+import matplotlib.pyplot as plt
 
 from torch.autograd import Variable
 from model import NetworkCIFAR as Network
 
+from scipy.stats import pearsonr
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser("cifar")
-  parser.add_argument('--annofile', type=str, default='../dlprb_train/RNCMPT00001.txt.annotations.RNAcontext-sample', help='location of the annotation file')
-  parser.add_argument('--seqfile', type=str, default='../dlprb_train/RNCMPT00001.txt.sequences.RNAcontext.clamp-sample', help='location of the sequence file')
+  parser.add_argument('--train_annofile', type=str, default='../dlprb_train/RNCMPT00001.txt.annotations.RNAcontext-sample', help='location of the annotation file for training set')
+  parser.add_argument('--train_seqfile', type=str, default='../dlprb_train/RNCMPT00001.txt.sequences.RNAcontext.clamp-sample', help='location of the sequence file for training set')
+  parser.add_argument('--valid_annofile', type=str, default='../dlprb_test/RNCMPT00001.txt.annotations.RNAcontext-sample', help='location of the annotation file for validation/testing set')
+  parser.add_argument('--valid_seqfile', type=str, default='../dlprb_test/RNCMPT00001.txt.sequences.RNAcontext.clamp-sample', help='location of the sequence file for validation/testing set')
   parser.add_argument('--batch_size', type=int, default=64, help='batch size')
   parser.add_argument('--learning_rate', type=float, default=0.025, help='init learning rate')
   parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
   parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
-  parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
+  parser.add_argument('--report_freq', type=float, default=100, help='report frequency')
   parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
   parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
   parser.add_argument('--init_channels', type=int, default=36, help='num of init channels')
@@ -148,8 +153,8 @@ def main(args):
       weight_decay=args.weight_decay
       )
 
-  train_data = BindingDataset(args.annofile, args.seqfile)
-  valid_data = BindingDataset(args.annofile, args.seqfile)
+  train_data = BindingDataset(args.train_annofile, args.train_seqfile)
+  valid_data = BindingDataset(args.valid_annofile, args.valid_seqfile)
 
   num_train = len(train_data)
   indices = list(range(num_train))
@@ -159,20 +164,23 @@ def main(args):
       train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
 
   valid_queue = torch.utils.data.DataLoader(
-      valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
+      valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=False, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
 
   for epoch in range(args.epochs):
+    print('-------------------\n|Starting arch %03d|\n-------------------' % epoch)
     scheduler.step()
     logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
     model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
 
-    train_acc, train_obj = train(train_queue, model, criterion, optimizer)
+    train_acc, train_obj = train(train_queue, model, criterion, optimizer, epoch)
     logging.info('train_acc %f', train_acc)
 
-    valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    logging.info('valid_acc %f', valid_acc)
+    torch.cuda.empty_cache()
+
+    valid_acc, valid_obj = infer(valid_queue, model, criterion, epoch)
+    #logging.info('valid_acc %f', valid_acc)
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   
@@ -180,77 +188,103 @@ def main(args):
 def pearson_corr(x, y):
   vx = x - torch.mean(x)
   vy = y - torch.mean(y)
-  return vx.dot(vy) / (torch.norm(vx, 2) * torch.norm(vy, 2))
+  return vx.dot(vy.flatten()) / (torch.norm(vx, 2) * torch.norm(vy, 2))
 
 
-def train(train_queue, model, criterion, optimizer):
+def train(train_queue, model, criterion, optimizer, epoch):
   objs = utils.AvgrageMeter()
   top1 = utils.AvgrageMeter()
   top5 = utils.AvgrageMeter()
   model.train()
+  
+  for controller_epoch in range(1):
+    total_logits = []
+    total_target = []
+    for step, (input, target) in enumerate(train_queue):
+      input = Variable(input).cuda()
+      target = Variable(target.reshape((len(target), 1))).cuda(async=True)
 
-  for step, (input, target) in enumerate(train_queue):
-    input = Variable(input).cuda()
-    target = Variable(target).cuda(async=True)
+      optimizer.zero_grad()
+      logits, logits_aux = model(input)
+      loss = criterion(logits, target)
+      if args.auxiliary:
+        loss_aux = criterion(logits_aux, target)
+        loss += args.auxiliary_weight*loss_aux
 
-    optimizer.zero_grad()
-    logits, logits_aux = model(input)
+      loss.backward()
+      nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
+      optimizer.step()
+
+      logits_list = [float(x) for x in logits.data.cpu().flatten()]
+      target_list = [float(x) for x in target.data.cpu().flatten()]
+      pearson, _ = pearsonr(logits_list, target_list)#pearson_corr(logits.flatten(), target)
+
+      total_logits.extend(logits_list)
+      total_target.extend(target_list)
+      n = input.size(0)
+      if input.size(0) != 48:
+        objs.update(loss.data.item(), n)
+        top1.update(pearson, n)
+      if step % args.report_freq == 0:
+        logging.info('batch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
+    
+      del input
+      del target
+      torch.cuda.empty_cache()
+
+    total_pearson, _ = pearsonr(total_logits, total_target)
+    print('----------\nend of epoch - training accuracy: %f\n----------' % total_pearson)
+
+  plt.clf()
+  plt.scatter(total_logits, total_target)
+  plt.title('Training relationship - x:logits, y:target')
+  plt.savefig(os.path.join(args.save, 'train_%d.png' % epoch), dpi=200)
+
+  return top1.avg, objs.avg
+
+
+def infer(valid_queue, model, criterion, epoch):
+  objs = utils.AvgrageMeter()
+  top1 = utils.AvgrageMeter()
+  model.eval()
+
+  total_logits = []
+  total_target = []
+
+  for step, (input, target) in enumerate(valid_queue):
+    input = Variable(input, volatile=True).cuda()
+    target = Variable(target.reshape((len(target), 1)), volatile=True).cuda(async=True)
+
+    logits, _ = model(input)
     loss = criterion(logits, target)
-    if args.auxiliary:
-      loss_aux = criterion(logits_aux, target)
-      loss += args.auxiliary_weight*loss_aux
-    loss.backward()
-    nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
-    optimizer.step()
 
-    pearson = pearson_corr(logits.flatten(), target)
 
+    logits_list = [float(x) for x in logits.data.cpu().flatten()]
+    target_list = [float(x) for x in target.data.cpu().flatten()]
+    pearson, _ = pearsonr(logits_list, target_list)#pearson_corr(logits.flatten(), target)
+
+    total_logits.extend(logits_list)
+    total_target.extend(target_list)
+ 
     n = input.size(0)
     if input.size(0) != 48:
       objs.update(loss.data.item(), n)
       top1.update(pearson, n)
+
     if step % args.report_freq == 0:
-      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
-      logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
-      #logging.info('train %03d %e %f', step, objs.avg, top1.avg)
+      logging.info('epoch %03d - validation loss: %f, acc: %f', step, loss.data.item(), pearson)
     
     del input
     del target
     torch.cuda.empty_cache()
 
-  return top1.avg, objs.avg
+  total_pearson, _ = pearsonr(total_logits, total_target)
+  print('----------\nend of epoch - valid accuracy: %f\n----------' % total_pearson)
 
-
-def infer(valid_queue, model, criterion):
-  objs = utils.AvgrageMeter()
-  top1 = utils.AvgrageMeter()
-  model.eval()
-  print('1')
-
-  print(len(valid_queue))
-  for step, (input, target) in enumerate(valid_queue):
-    input = Variable(input, volatile=True).cuda()
-    target = Variable(target, volatile=True).cuda(async=True)
-
-    logits, _ = model(input)
-    loss = criterion(logits, target)
-
-    pearson = pearson_corr(logits.flatten(), target)
-    n = input.size(0)
-    if input.size(0) != 48:
-      objs.update(loss.data.item(), n)
-      top1.update(pearson, n)
-      #top1.update(logits, n)
-
-    if step % args.report_freq == 0:
-      print('epoch %03d - training loss: %f, acc: %f' % (step, loss.data.item(), pearson))
-      logging.info('epoch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
-      #logging.info('valid %03d %e %f', step, objs.avg, top1.avg)
-
-    del input
-    del target
-    torch.cuda.empty_cache()
-
+  plt.clf()
+  plt.scatter(total_logits, total_target)
+  plt.title('Validation relationship - x:logits, y:target')
+  plt.savefig(os.path.join(args.save, 'valid_%d.png' % epoch), dpi=200)
   return top1.avg, objs.avg
 
 
