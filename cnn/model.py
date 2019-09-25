@@ -34,10 +34,12 @@ class Cell(nn.Module):
     self.multiplier = len(concat)
 
     self._ops = nn.ModuleList()
+    self._ops_str = []
     for name, index in zip(op_names, indices):
       stride = 2 if reduction and index < 2 else 1
       op = OPS[name](C, stride, True)
       self._ops += [op]
+      self._ops_str.append(name)
     self._indices = indices
     #print('self._steps: {}'.format(self._steps))
     #print('self._concat: {}'.format(self._concat))

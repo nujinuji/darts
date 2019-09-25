@@ -183,8 +183,7 @@ def main(args):
     valid_acc, valid_obj = infer(valid_queue, model, criterion, epoch)
     logging.info('valid_acc %f', valid_acc)
 
-    #plot(genotype.normal, "normal_" + str(epoch))
-    #plot(genotype.reduce, "reduce_" + str(epoch))
+    plot(list(zip(model.cells[0]._ops_str, model.cells[0].indices)), "arch_epoch%03d" % epoch)
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   
 
