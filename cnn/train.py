@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 
 from torch.autograd import Variable
 from model import NetworkCIFAR as Network
+from visualize import *
 
 from scipy.stats import pearsonr
 
@@ -180,8 +181,10 @@ def main(args):
     torch.cuda.empty_cache()
 
     valid_acc, valid_obj = infer(valid_queue, model, criterion, epoch)
-    #logging.info('valid_acc %f', valid_acc)
+    logging.info('valid_acc %f', valid_acc)
 
+    #plot(genotype.normal, "normal_" + str(epoch))
+    #plot(genotype.reduce, "reduce_" + str(epoch))
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   
 
@@ -217,7 +220,8 @@ def train(train_queue, model, criterion, optimizer, epoch):
 
       logits_list = [float(x) for x in logits.data.cpu().flatten()]
       target_list = [float(x) for x in target.data.cpu().flatten()]
-      pearson, _ = pearsonr(logits_list, target_list)#pearson_corr(logits.flatten(), target)
+      pearson, _ = pearsonr(logits_list, target_list)
+      #pearson_corr(logits.flatten(), target)
 
       total_logits.extend(logits_list)
       total_target.extend(target_list)
@@ -261,7 +265,8 @@ def infer(valid_queue, model, criterion, epoch):
 
     logits_list = [float(x) for x in logits.data.cpu().flatten()]
     target_list = [float(x) for x in target.data.cpu().flatten()]
-    pearson, _ = pearsonr(logits_list, target_list)#pearson_corr(logits.flatten(), target)
+    pearson, _ = pearsonr(logits_list, target_list)
+    #pearson_corr(logits.flatten(), target)
 
     total_logits.extend(logits_list)
     total_target.extend(target_list)
