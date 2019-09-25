@@ -3,6 +3,7 @@ import torch.nn as nn
 from operations import *
 from torch.autograd import Variable
 from utils import drop_path
+from visualize import *
 
 
 class Cell(nn.Module):
