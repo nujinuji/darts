@@ -10,6 +10,7 @@ import logging
 import argparse
 import torch.nn as nn
 import genotypes
+from operations import ops_lookup
 import torch.utils
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
@@ -183,7 +184,7 @@ def main(args):
     valid_acc, valid_obj = infer(valid_queue, model, criterion, epoch)
     logging.info('valid_acc %f', valid_acc)
 
-    plot(list(zip(model.cells[0]._ops_str, model.cells[0].indices)), "arch_epoch%03d" % epoch)
+    plot(list(zip([ops_lookup(x) for x in model.cells[0]._ops], model.cells[0].indices)), "arch_epoch%03d" % epoch)
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   
 

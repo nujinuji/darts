@@ -31,6 +31,39 @@ OPS = {
     ),
 }
 
+def ops_lookup(x):
+  c = type(x).__name__
+  if c == 'AvgPool2d':
+    if c.kernel_size == 3:
+      return 'avg_pool_3x3'
+    else:
+      return 'avg_pool_2x2'
+  elif c == 'MaxPool2d':
+    if c.kernel_size == 3:
+      return 'max_pool_3x3'
+    else:
+      return 'max_pool_2x2'
+  elif c == 'Identity' or c == 'FactorizedReduce':
+    return 'skip_connect'
+  elif c == 'SepConv':
+    if c.kernel_size == 3:
+      return 'sep_conv_3x3'
+    elif c.kernel_size == 5:
+      return 'sep_conv_5x5'
+    else:
+      return 'sep_conv_7x7'
+  elif c == 'DilConv':
+    if c.kernel_size == 3:
+      return 'dil_conv_3x3'
+    elif c.kernel_size == 5:
+      return 'dil_conv_5x5'
+    else:
+      return 'dil_conv_7x7'
+  elif c == 'Sequential':
+    return 'conv_7x1_1x7'
+  elif c == 'Zero':
+    return 'none'
+
 class ReLUConvBN(nn.Module):
 
   def __init__(self, C_in, C_out, kernel_size, stride, padding, affine=True):
@@ -51,6 +84,7 @@ class DilConv(nn.Module):
     
   def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation, affine=True):
     super(DilConv, self).__init__()
+    self.kernel_size = kernel_size
     self.op = nn.Sequential(
       nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
@@ -68,6 +102,7 @@ class SepConv(nn.Module):
     
   def __init__(self, C_in, C_out, kernel_size, stride, padding, affine=True):
     super(SepConv, self).__init__()
+    self.kernel_size = kernel_size
     self.op = nn.Sequential(
       nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
