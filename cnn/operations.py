@@ -3,11 +3,11 @@ import torch.nn as nn
 
 def avg_pool_wrap(kernel_size):
     #print('AvgPool kernel size: {}'.format(kernel_size))
-    return lambda C, stride, affine: nn.AvgPool2d(kernel_size, stride = stride, padding=1, count_include_pad=False)
+    return lambda C, stride, affine: nn.AvgPool2d((1, kernel_size), stride = stride, padding=1, count_include_pad=False)
 
 def max_pool_wrap(kernel_size):
     #print('MaxPool kernel size: {}'.format(kernel_size))
-    return lambda C, stride, affine: nn.MaxPool2d(kernel_size, stride = stride, padding=1)
+    return lambda C, stride, affine: nn.MaxPool2d((1, kernel_size), stride = stride, padding=1)
 
 OPS = {
   'none' : lambda C, stride, affine: Zero(stride),
@@ -70,7 +70,7 @@ class ReLUConvBN(nn.Module):
     super(ReLUConvBN, self).__init__()
     self.op = nn.Sequential(
       nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, C_out, kernel_size, stride=stride, padding=padding, bias=False),
+      nn.Conv2d(C_in, C_out, (1, kernel_size), stride=stride, padding=padding, bias=False),
       nn.BatchNorm2d(C_out, affine=affine)
     )
     #print("ReLUConvBN.init {}".format(kernel_size)) #delete print
@@ -87,7 +87,7 @@ class DilConv(nn.Module):
     self.kernel_size = kernel_size
     self.op = nn.Sequential(
       nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
+      nn.Conv2d(C_in, C_in, kernel_size=(1, kernel_size), stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
       )
@@ -105,11 +105,11 @@ class SepConv(nn.Module):
     self.kernel_size = kernel_size
     self.op = nn.Sequential(
       nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
+      nn.Conv2d(C_in, C_in, kernel_size=(1, kernel_size), stride=stride, padding=padding, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_in, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_in, affine=affine),
       nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=1, padding=padding, groups=C_in, bias=False),
+      nn.Conv2d(C_in, C_in, kernel_size=(1, kernel_size), stride=1, padding=padding, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
       )
