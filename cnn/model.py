@@ -12,10 +12,10 @@ class Cell(nn.Module):
     super(Cell, self).__init__()
 
     if reduction_prev:
-      self.preprocess0 = FactorizedReduce(C_prev_prev, C)
+      self.preprocess0 = PreprocessReduce(C_prev_prev, C)
     else:
-      self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0)
-    self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0)
+      self.preprocess0 = PreReLUConvBN(C_prev_prev, C)
+    self.preprocess1 = PreReLUConvBN(C_prev, C)
     
     if reduction:
       op_names, indices = zip(*genotype.reduce)
