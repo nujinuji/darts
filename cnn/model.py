@@ -53,10 +53,14 @@ class Cell(nn.Module):
     for i in range(self._steps):
       h1 = states[self._indices[2*i]]
       h2 = states[self._indices[2*i+1]]
+
+      print('cell {}step: {}, {}'.format(i, h1.shape, h2.shape))
       op1 = self._ops[2*i]
       op2 = self._ops[2*i+1]
+      print('op: {}, {}'.format(op1, op2))
       h1 = op1(h1)
       h2 = op2(h2)
+      print('out: {}, {}'.format(h1.shape, h2.shape))
       if self.training and drop_prob > 0.:
         if not isinstance(op1, Identity):
           h1 = drop_path(h1, drop_prob)
@@ -64,6 +68,7 @@ class Cell(nn.Module):
           h2 = drop_path(h2, drop_prob)
       s = h1 + h2
       states += [s]
+    print([states[i].shape for i in self._concat])
     return torch.cat([states[i] for i in self._concat], dim=1)
 
 

@@ -3,11 +3,11 @@ import torch.nn as nn
 
 def avg_pool_wrap(kernel_size):
     #print('AvgPool kernel size: {}'.format(kernel_size))
-    return lambda C, stride, affine: nn.AvgPool2d((1, kernel_size), stride = stride, padding=1, count_include_pad=False)
+    return lambda C, stride, affine: nn.AvgPool2d((1, kernel_size), stride = stride, padding=0, count_include_pad=False)
 
 def max_pool_wrap(kernel_size):
     #print('MaxPool kernel size: {}'.format(kernel_size))
-    return lambda C, stride, affine: nn.MaxPool2d((1, kernel_size), stride = stride, padding=1)
+    return lambda C, stride, affine: nn.MaxPool2d((1, kernel_size), stride = stride, padding=0)
 
 OPS = {
   'none' : lambda C, stride, affine: Zero(stride),
@@ -16,13 +16,11 @@ OPS = {
   'max_pool_2x2' : max_pool_wrap(2),
   'avg_pool_2x2' : avg_pool_wrap(2),
   'skip_connect' : lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
-  'sep_conv_2x2' : lambda C, stride, affine: SepConv(C, C, 2, stride, 1, affine=affine),
-  'dil_conv_2x2' : lambda C, stride, affine: DilConv(C, C, 2, stride, 2, 2, affine=affine),
-  'sep_conv_3x3' : lambda C, stride, affine: SepConv(C, C, 3, stride, 1, affine=affine),
-  'sep_conv_5x5' : lambda C, stride, affine: SepConv(C, C, 5, stride, 2, affine=affine),
-  'sep_conv_7x7' : lambda C, stride, affine: SepConv(C, C, 7, stride, 3, affine=affine),
-  'dil_conv_3x3' : lambda C, stride, affine: DilConv(C, C, 3, stride, 2, 2, affine=affine),
-  'dil_conv_5x5' : lambda C, stride, affine: DilConv(C, C, 5, stride, 4, 2, affine=affine),
+  'sep_conv_3x3' : lambda C, stride, affine: SepConv(C, C, 3, stride, (0, 1), affine=affine),
+  'sep_conv_5x5' : lambda C, stride, affine: SepConv(C, C, 5, stride, (0, 2), affine=affine),
+  'sep_conv_7x7' : lambda C, stride, affine: SepConv(C, C, 7, stride, (0, 3), affine=affine),
+  'dil_conv_3x3' : lambda C, stride, affine: DilConv(C, C, 3, stride, (0, 2), 2, affine=affine),
+  'dil_conv_5x5' : lambda C, stride, affine: DilConv(C, C, 5, stride, (0, 4), 2, affine=affine),
   'conv_7x1_1x7' : lambda C, stride, affine: nn.Sequential(
     nn.ReLU(inplace=False),
     nn.Conv2d(C, C, (1,7), stride=(1, stride), padding=(0, 3), bias=False),
@@ -168,7 +166,7 @@ class PreprocessReduce(nn.Module):
     super(PreprocessReduce, self).__init__()
     assert C_out % 2 == 0
     self.conv_1 = nn.Conv2d(C_in, C_out // 2, (9, 1), stride=1, padding=0, bias=False)
-    self.conv_2 = nn.Conv2d(C_in, C_out // 2, 1, stride=1, padding=0, bias=False) 
+    self.conv_2 = nn.Conv2d(C_in, C_out // 2, (9, 1), stride=1, padding=0, bias=False) 
     self.bn = nn.BatchNorm2d(C_out, affine=affine)
     #print('FactorizedReduce')
 
@@ -176,6 +174,7 @@ class PreprocessReduce(nn.Module):
     # correction of dimension mismatch error
     out = torch.cat([self.conv_1(x), self.conv_2(x[:,:,:,:])], dim=1)
     out = self.bn(out)
+    print('PreprocessReduce: {}'.format(out.shape))
     #print("FactorizedReduce data dimension {}".format(x.shape)) #print
     return out
 
@@ -191,5 +190,10 @@ class PreReLUConvBN(nn.Module):
     #print("ReLUConvBN.init {}".format(kernel_size)) #delete print
 
   def forward(self, x):
-    #print("ReLUConvBN.forward {}".format(x.shape)) #print
-    return self.op(x)
+    print("ReLUConvBN.forward {}".format(x.shape)) #print
+    print(x.shape)
+    print(self.op[1].padding)
+    res = self.op(x)
+    
+    print('PrePreLUCOnvBN: {}'.format(res.shape))
+    return res
