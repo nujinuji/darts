@@ -29,10 +29,10 @@ class Cell(nn.Module):
     self.reduction = reduction
 
     if reduction_prev:
-      self.preprocess0 = FactorizedReduce(C_prev_prev, C, affine=False)
+      self.preprocess0 = PreprocessReduce(C_prev_prev, C, affine=False)
     else:
-      self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0, affine=False)
-    self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0, affine=False)
+      self.preprocess0 = PreReLUConvBN(C_prev_prev, C, affine=False)
+    self.preprocess1 = PreReLUConvBN(C_prev, C, affine=False)
     self._steps = steps
     self._multiplier = multiplier
 
@@ -72,7 +72,7 @@ class Network(nn.Module):
     C_curr = stem_multiplier*C
     self.stem = nn.Sequential(
       # set number of channel to 1 and kernel size to 3
-      nn.Conv2d(2, C_curr, 3, padding=1, bias=False, groups = 2),
+      nn.Conv2d(1, C_curr, (9, 3), padding=0),
       nn.BatchNorm2d(C_curr)
     )
  

@@ -13,8 +13,6 @@ OPS = {
   'none' : lambda C, stride, affine: Zero(stride),
   'avg_pool_3x3' : avg_pool_wrap(3),
   'max_pool_3x3' : max_pool_wrap(3),
-  'max_pool_2x2' : max_pool_wrap(2),
-  'avg_pool_2x2' : avg_pool_wrap(2),
   'skip_connect' : lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
   'sep_conv_3x3' : lambda C, stride, affine: SepConv(C, C, 3, stride, (0, 1), affine=affine),
   'sep_conv_5x5' : lambda C, stride, affine: SepConv(C, C, 5, stride, (0, 2), affine=affine),
@@ -180,12 +178,12 @@ class PreprocessReduce(nn.Module):
 
 class PreReLUConvBN(nn.Module):
 
-  def __init__(self, C_in, C_out):
+  def __init__(self, C_in, C_out, affine = True):
     super(PreReLUConvBN, self).__init__()
     self.op = nn.Sequential(
       nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_out, (9, 1), stride=1, padding=0, bias=False),
-      nn.BatchNorm2d(C_out, affine=True)
+      nn.BatchNorm2d(C_out, affine=affine)
     )
     #print("ReLUConvBN.init {}".format(kernel_size)) #delete print
 

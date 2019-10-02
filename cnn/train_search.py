@@ -13,10 +13,14 @@ import torch.nn.functional as F
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
 import pandas as pd 
+import matplotlib.pyplot as plt
 
 from torch.autograd import Variable
 from model_search import Network
 from architect import Architect
+from visualize import *
+
+from scipy.stats import pearsonr
 
 
 parser = argparse.ArgumentParser("cifar")
@@ -59,47 +63,56 @@ logging.getLogger().addHandler(fh)
 CIFAR_CLASSES = 2
 
 
-def loader(path):
-  """Load data from given path
+class BindingDataset(torch.utils.data.Dataset):
 
-  Parameters
-  ----------
-  path : str
-    file directory containing binding information
+  def loader(self, annofile, seqfile):
+    """Load data from given path
 
-  Returns
-  -------
-  tuple of numpy array and str
-    2d data matrix and its label
-  """
-  lbl = ['bind', 'not_bind'].index(path.split('/')[-2]) 
-  csv = pd.read_csv(path, sep='\t', header = None).values
-  data = np.zeros((2, 5, 41))
-  data[0, :4, :] = csv[:4, :]
-  data[1, :, :] = csv[4:, :]
-  return data, lbl
+    Parameters
+    ----------
+    annofile : str
+      file name of annotation file. format: <seq> <struct matrix>
 
+    seqfile : str
+      file name of sequence file. format: <bind score> <seq>
 
-def transform(d):
-  """Transform data to tensor from NxHxW to NxCxHxW by adding 1 dimension
+    Returns
+    -------
+    tuple of numpy array and str
+      2d data matrix and its label
+    """
+    res = []
+    affinity = []
+    with open(annofile) as anno_file:
+      with open(seqfile) as seq_file:
+        for seq_line in seq_file:
+          
+          # Get affinity and sequence; then transform sequence to numpy array of characters  
+          affinity.append(float(seq_line.split(' ')[0]))
+          seq = anno_file.readline()[1:].strip()
+          seq_numpy = np.array(list(seq))
 
-  Parameters
-  ----------
-  d : pytorch.tensor
-    3d matrix of input sequence data
+          # Create empty 2D matrix and fill with one-hot representations
+          mat = np.zeros((9, MAX_LEN))
+          for i, c in enumerate('ATCG'):
+            mat[i, :len(seq)] = (seq_numpy == c).astype(float)
 
-  Returns
-  -------
-  tuple of torch.tensor and str
-    4d matrix of float with its label
-  """
-  data, label = d[0], d[1]
-  try:
-    return torch.tensor(data, dtype=torch.float32), label
-  except ValueError:
-    sys.stderr.write(str(data))
-    return 0
+          # Append profile
+          for i in range(4, 9):
+            profile = anno_file.readline().lstrip().strip().split('\t')
+            mat[i, :len(seq)] = [float(x) for x in profile]
 
+          res.append([mat])
+    return torch.tensor(res, dtype=torch.float), torch.tensor(affinity, dtype=torch.float)
+
+  def __init__(self, annofile, seqfile, transform = None):
+    self.dataset, self.labels = self.loader(annofile, seqfile)
+
+  def __len__(self):
+    return self.labels.shape[0]
+
+  def __getitem__(self, idx):
+    return self.dataset[idx, :, :, :], self.labels[idx]
 
 def main():
   if not torch.cuda.is_available():
@@ -128,24 +141,19 @@ def main():
       weight_decay=args.weight_decay)
 
   
-  #train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  train_data = dset.DatasetFolder(args.data, loader, ['ext'], transform=transform)
-  #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
-
+  train_data = BindingDataset(args.train_annofile, args.train_seqfile)
+  valid_data = BindingDataset(args.valid_annofile, args.valid_seqfile)
 
   num_train = len(train_data)
   indices = list(range(num_train))
-  split = int(np.floor(args.train_portion * num_train))
+  split = int(np.floor(0.7 * num_train))
 
   train_queue = torch.utils.data.DataLoader(
-      train_data, batch_size=args.batch_size,
-      sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[:split]),
-      pin_memory=True, num_workers=2)
+      train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
 
   valid_queue = torch.utils.data.DataLoader(
-      train_data, batch_size=args.batch_size,
-      sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
-      pin_memory=True, num_workers=2)
+      valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=False, num_workers=2)
+
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, float(args.epochs), eta_min=args.learning_rate_min)
@@ -153,6 +161,7 @@ def main():
   architect = Architect(model, args)
 
   for epoch in range(args.epochs):
+    print('-------------------\n|Starting arch %03d|\n-------------------' % epoch)
     scheduler.step()
     lr = scheduler.get_lr()[0]
     logging.info('epoch %d lr %e', epoch, lr)
@@ -178,15 +187,16 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
   objs = utils.AvgrageMeter()
   top1 = utils.AvgrageMeter()
   top5 = utils.AvgrageMeter()
+
+  model.train()
+
+  total_logits = []
+  total_target = []
+
   for step, (input, target) in enumerate(train_queue):
-    input = input[0]
-    #print(input.shape)
-    model.train()
-    #print(len(input))
-    #n = input.size(0)
 
     input = Variable(input, requires_grad=False).cuda()
-    target = Variable(target, requires_grad=False).cuda(async=True)
+    target = Variable(target.reshape((len(target), 1))).cuda(async=True)
 
     # get a random minibatch from the search queue with replacement
     input_search, target_search = next(iter(valid_queue))
@@ -207,15 +217,17 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
 
-    n = input.size(0)
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-    print('loss.data: ' + str(loss.data.item()))
-    objs.update(loss.data.item(), n)
-    top1.update(prec1.data.item(), n)
-    top5.update(prec5.data.item(), n)
+    logits_list = [float(x) for x in logits.data.cpu().flatten()]
+    target_list = [float(x) for x in target.data.cpu().flatten()]
+    pearson, _ = pearsonr(logits_list, target_list)
+    total_logits.extend(logits_list)
+    total_target.extend(target_list)
 
     if step % args.report_freq == 0:
-      logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+      logging.info('batch %03d - training loss: %f, acc: %f', step, loss.data.item(), pearson)
+
+  total_pearson, _ = pearsonr(total_logits, total_target)
+  print('----------\nend of epoch - training accuracy: %f\n----------' % total_pearson)
 
   return top1.avg, objs.avg
 
@@ -226,22 +238,29 @@ def infer(valid_queue, model, criterion):
   top5 = utils.AvgrageMeter()
   model.eval()
 
+  total_logits = []
+  total_target = []
+
   for step, (input, target) in enumerate(valid_queue):
-    input = input[0]
+
     input = Variable(input, volatile=True).cuda()
-    target = Variable(target, volatile=True).cuda(async=True)
+    target = Variable(target.reshape((len(target), 1)), volatile=True).cuda(async=True)
 
     logits = model(input)
     loss = criterion(logits, target)
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-    n = input.size(0)
-    objs.update(loss.data.item(), n)
-    top1.update(prec1.data.item(), n)
-    top5.update(prec5.data.item(), n)
+    logits_list = [float(x) for x in logits.data.cpu().flatten()]
+    target_list = [float(x) for x in target.data.cpu().flatten()]
+    pearson, _ = pearsonr(logits_list, target_list)
+
+    total_logits.extend(logits_list)
+    total_target.extend(target_list)
 
     if step % args.report_freq == 0:
-      logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+      logging.info('epoch %03d - validation loss: %f, acc: %f', step, loss.data.item(), pearson)
+
+  total_pearson, _ = pearsonr(total_logits, total_target)
+  print('----------\nend of epoch - valid accuracy: %f\n----------' % total_pearson)
 
   return top1.avg, objs.avg
 
