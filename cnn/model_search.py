@@ -19,7 +19,11 @@ class MixedOp(nn.Module):
       self._ops.append(op)
 
   def forward(self, x, weights):
-    return sum(w * op(x) for w, op in zip(weights, self._ops))
+    print('mixedOp')
+    print([i.shape[2] for i in x])
+    print([i.shape for i in weights])
+    print(self._ops)
+    return sum([w * op(x) for w, op in zip(weights, self._ops)])
 
 
 class Cell(nn.Module):
@@ -102,6 +106,7 @@ class Network(nn.Module):
     return model_new
 
   def forward(self, input):
+    print('forward input: {}'.format(input.shape))
     s0 = s1 = self.stem(input)
     for i, cell in enumerate(self.cells):
       if cell.reduction:
