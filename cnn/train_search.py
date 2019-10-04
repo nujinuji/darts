@@ -63,8 +63,12 @@ logging.getLogger().addHandler(fh)
 
 
 # binary classification of binding or not binding
+
 CIFAR_CLASSES = 2
 
+# define binding threshould and maximum sequence length
+CUTOFF = 0
+MAX_LEN = 41
 
 class BindingDataset(torch.utils.data.Dataset):
 
@@ -204,9 +208,14 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
     # get a random minibatch from the search queue with replacement
     input_search, target_search = next(iter(valid_queue))
 
+    target_search = target_search.reshape((len(target_search), 1))
+
+    print(input_search.shape)
+    print(target_search.shape)
+
     # input_search dimension: 1 * n * 9 * 41
     # retrieve input_search data then transform to n * 1 * 9 * 41
-    input_search = input_search[0]
+    input_search = input_search
     input_search = Variable(input_search, requires_grad=False).cuda()
     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
 
