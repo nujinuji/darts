@@ -72,8 +72,10 @@ class ReLUConvBN(nn.Module):
     #print("ReLUConvBN.init {}".format(kernel_size)) #delete print
 
   def forward(self, x):
-    #print("ReLUConvBN.forward {}".format(x.shape)) #print
-    return self.op(x)
+    print("ReLUConvBN.forward {}".format(x.shape)) #print
+    out = self.op(x)
+    print("ReLUConvBN.result {}".format(out.shape))
+    return out
 
 
 class DilConv(nn.Module):
@@ -90,8 +92,10 @@ class DilConv(nn.Module):
     #print("DilConv kernel size: {}".format(kernel_size)) #print
 
   def forward(self, x):
-    #print("DilConv data dim: {}".format(x.shape)) #print
-    return self.op(x)
+    print("DilConv.forward {}".format(x.shape)) #print
+    out = self.op(x)
+    print("DilConv.result {}".format(out.shape))
+    return out
 
 
 class SepConv(nn.Module):
@@ -112,8 +116,10 @@ class SepConv(nn.Module):
     #print("SepConv kernel size: {}".format(kernel_size)) #print
 
   def forward(self, x):
-    #print("SepConv data dim: {}".format(x.shape)) #print
-    return self.op(x)
+    print("SepConv.forward {}".format(x.shape)) #print
+    out = self.op(x)
+    print("SepConv.result {}".format(out.shape))
+    return out
 
 
 class Identity(nn.Module):
@@ -122,6 +128,7 @@ class Identity(nn.Module):
     super(Identity, self).__init__()
 
   def forward(self, x):
+    print("Identity.forward {}".format(x.shape))
     return x
 
 
@@ -151,10 +158,12 @@ class FactorizedReduce(nn.Module):
     #print('FactorizedReduce')
 
   def forward(self, x):
+    print("FactorizedReduce.forward {}".format(x.shape))
     x = self.relu(x)
     # correction of dimension mismatch error
     out = torch.cat([self.conv_1(x), self.conv_2(x[:,:,:,:])], dim=1)
     out = self.bn(out)
+    print("FactorizedReduce.result {}".format(out.shape))
     #print("FactorizedReduce data dimension {}".format(x.shape)) #print
     return out
 
