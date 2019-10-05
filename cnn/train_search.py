@@ -135,7 +135,7 @@ def main():
   logging.info('gpu device = %d' % args.gpu)
   logging.info("args = %s", args)
 
-  criterion = nn.CrossEntropyLoss()
+  criterion = nn.MSELoss()
   criterion = criterion.cuda()
   model = Network(args.init_channels, CIFAR_CLASSES, args.layers, criterion)
   model = model.cuda()
@@ -176,8 +176,8 @@ def main():
     genotype = model.genotype()
     logging.info('genotype = %s', genotype)
 
-    print(F.softmax(model.alphas_normal, dim=-1))
-    print(F.softmax(model.alphas_reduce, dim=-1))
+    #print(F.softmax(model.alphas_normal, dim=-1))
+    #print(F.softmax(model.alphas_reduce, dim=-1))
 
     # training
     train_acc, train_obj = train(train_queue, valid_queue, model, architect, criterion, optimizer, lr)
@@ -210,8 +210,8 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
 
     target_search = target_search.reshape((len(target_search), 1))
 
-    print(input_search.shape)
-    print(target_search.shape)
+    #print(input_search.shape)
+    #print(target_search.shape)
 
     # input_search dimension: 1 * n * 9 * 41
     # retrieve input_search data then transform to n * 1 * 9 * 41
@@ -228,6 +228,10 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
     loss.backward()
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
+
+    #print(logits.shape)
+    #print(logits.data.cpu()[:5, :])
+    #print(target.shape)
 
     logits_list = [float(x) for x in logits.data.cpu().flatten()]
     target_list = [float(x) for x in target.data.cpu().flatten()]

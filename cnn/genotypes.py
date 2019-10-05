@@ -4,8 +4,8 @@ Genotype = namedtuple('Genotype', 'normal normal_concat reduce reduce_concat')
 
 PRIMITIVES = [
     'none',
-    'max_pool_1x3',
-    'avg_pool_1x3',
+    'max_pool_1x2',
+    'avg_pool_1x2',
     'skip_connect',
     'sep_conv_1x3',
     'sep_conv_1x5',

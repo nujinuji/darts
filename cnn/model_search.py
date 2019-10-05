@@ -19,11 +19,16 @@ class MixedOp(nn.Module):
       self._ops.append(op)
 
   def forward(self, x, weights):
-    print('mixedOp')
-    print([i.shape[2] for i in x])
-    print([i.shape for i in weights])
+    '''
+    print('in mixedOp')
     print(self._ops)
-    return sum([w * op(x) for w, op in zip(weights, self._ops)])
+    print(x.shape)
+    '''
+    out = []
+    for w, op in zip(weights, self._ops):
+      out.append(w * op(x))
+    #print('mixed op out: {}'.format(sum(out).shape))
+    return sum(out)
 
 
 class Cell(nn.Module):
@@ -55,7 +60,15 @@ class Cell(nn.Module):
     states = [s0, s1]
     offset = 0
     for i in range(self._steps):
-      s = sum(self._ops[offset+j](h, weights[offset+j]) for j, h in enumerate(states))
+      #print('step: {}'.format(i))
+      s = None
+      for j, h in enumerate(states):
+        #print(self._ops[offset+j])
+        out = self._ops[offset+j](h, weights[offset+j])
+        if s is None:
+          s = out
+        else:
+          s += out
       offset += len(states)
       states.append(s)
 
@@ -95,7 +108,7 @@ class Network(nn.Module):
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.classifier = nn.Linear(C_prev, num_classes)
+    self.classifier = nn.Sequential(nn.Linear(C_prev, 100), nn.Linear(100, 1))
 
     self._initialize_alphas()
 
@@ -106,7 +119,7 @@ class Network(nn.Module):
     return model_new
 
   def forward(self, input):
-    print('forward input: {}'.format(input.shape))
+    #print('forward input: {}'.format(input.shape))
     s0 = s1 = self.stem(input)
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -114,6 +127,7 @@ class Network(nn.Module):
       else:
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
+    #print('s1: {}'.format(s1.shape))
     out = self.global_pooling(s1)
     logits = self.classifier(out.view(out.size(0),-1))
     return logits

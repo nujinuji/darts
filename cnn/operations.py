@@ -1,18 +1,32 @@
 import torch
 import torch.nn as nn
 
+class avg_pool(nn.Module):
+  def __init__(self, C, stride, affine):
+    self.op = nn.AvgPool2d((1, kernel_size), stride = 1, padding=(0, 1), count_include_pad=False)
+  def forward(self, x):
+    out = self.op(x)
+    return self.op(x)
+
+class max_pool(nn.Module):
+  def __init__(self, C, stride, affine):
+    self.op = nn.MaxPool2d((1, kernel_size), stride = 1, padding=(0, 1), count_include_pad=False)
+  def forward(self, x):
+    out = self.op(x)
+    return self.op(x)
+
 def avg_pool_wrap(kernel_size):
     #print('AvgPool kernel size: {}'.format(kernel_size))
-    return lambda C, stride, affine: nn.AvgPool2d((1, kernel_size), stride = stride, padding=0, count_include_pad=False)
+    return lambda C, stride, affine: nn.AvgPool2d((1, kernel_size), stride = stride, padding=(0, 1))
 
 def max_pool_wrap(kernel_size):
     #print('MaxPool kernel size: {}'.format(kernel_size))
-    return lambda C, stride, affine: nn.MaxPool2d((1, kernel_size), stride = stride, padding=0)
+    return lambda C, stride, affine: nn.MaxPool2d((1, kernel_size), stride = stride, padding=(0, 1))
 
 OPS = {
   'none' : lambda C, stride, affine: Zero(stride),
-  'avg_pool_1x3' : avg_pool_wrap(3),
-  'max_pool_1x3' : max_pool_wrap(3),
+  'avg_pool_1x2' : avg_pool_wrap(3),
+  'max_pool_1x2' : max_pool_wrap(3),
   'skip_connect' : lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
   'sep_conv_1x3' : lambda C, stride, affine: SepConv(C, C, 3, stride, (0, 1), affine=affine),
   'sep_conv_1x5' : lambda C, stride, affine: SepConv(C, C, 5, stride, (0, 2), affine=affine),
@@ -72,9 +86,9 @@ class ReLUConvBN(nn.Module):
     #print("ReLUConvBN.init {}".format(kernel_size)) #delete print
 
   def forward(self, x):
-    print("ReLUConvBN.forward {}".format(x.shape)) #print
+    #print("ReLUConvBN.forward {}".format(x.shape)) #print
     out = self.op(x)
-    print("ReLUConvBN.result {}".format(out.shape))
+    #print("ReLUConvBN.result {}".format(out.shape))
     return out
 
 
@@ -92,9 +106,9 @@ class DilConv(nn.Module):
     #print("DilConv kernel size: {}".format(kernel_size)) #print
 
   def forward(self, x):
-    print("DilConv.forward {}".format(x.shape)) #print
+    #print("DilConv.forward {}".format(x.shape)) #print
     out = self.op(x)
-    print("DilConv.result {}".format(out.shape))
+    #print("DilConv.result {}".format(out.shape))
     return out
 
 
@@ -116,9 +130,9 @@ class SepConv(nn.Module):
     #print("SepConv kernel size: {}".format(kernel_size)) #print
 
   def forward(self, x):
-    print("SepConv.forward {}".format(x.shape)) #print
+    #print("SepConv.forward {}".format(x.shape)) #print
     out = self.op(x)
-    print("SepConv.result {}".format(out.shape))
+    #print("SepConv.result {}".format(out.shape))
     return out
 
 
@@ -128,7 +142,7 @@ class Identity(nn.Module):
     super(Identity, self).__init__()
 
   def forward(self, x):
-    print("Identity.forward {}".format(x.shape))
+    #print("Identity.forward {}".format(x.shape))
     return x
 
 
@@ -140,9 +154,10 @@ class Zero(nn.Module):
     #print('Zero')
 
   def forward(self, x):
+    #print("Zero data dimension {}".format(x.shape)) #print
     if self.stride == 1:
-      return x.mul(0.)
-    print("Zero data dimension {}".format(x.shape)) #print
+      out = x.mul(0.)
+      return out
     return x[:,:,::self.stride,::self.stride].mul(0.)
 
 
@@ -152,18 +167,18 @@ class FactorizedReduce(nn.Module):
     super(FactorizedReduce, self).__init__()
     assert C_out % 2 == 0
     self.relu = nn.ReLU(inplace=False)
-    self.conv_1 = nn.Conv2d(C_in, C_out // 2, 1, stride=2, padding=0, bias=False)
-    self.conv_2 = nn.Conv2d(C_in, C_out // 2, 1, stride=2, padding=0, bias=False) 
+    self.conv_1 = nn.Conv2d(C_in, C_out // 2, 1, stride=(1, 2), padding=0, bias=False)
+    self.conv_2 = nn.Conv2d(C_in, C_out // 2, 1, stride=(1, 2), padding=0, bias=False) 
     self.bn = nn.BatchNorm2d(C_out, affine=affine)
     #print('FactorizedReduce')
 
   def forward(self, x):
-    print("FactorizedReduce.forward {}".format(x.shape))
+    #print("FactorizedReduce.forward {}".format(x.shape))
     x = self.relu(x)
     # correction of dimension mismatch error
     out = torch.cat([self.conv_1(x), self.conv_2(x[:,:,:,:])], dim=1)
     out = self.bn(out)
-    print("FactorizedReduce.result {}".format(out.shape))
+    #print("FactorizedReduce.result {}".format(out.shape))
     #print("FactorizedReduce data dimension {}".format(x.shape)) #print
     return out
 
@@ -172,8 +187,8 @@ class PreprocessReduce(nn.Module):
   def __init__(self, C_in, C_out, affine=True):
     super(PreprocessReduce, self).__init__()
     assert C_out % 2 == 0
-    self.conv_1 = nn.Conv2d(C_in, C_out // 2, (1, 1), stride=1, padding=0, bias=False)
-    self.conv_2 = nn.Conv2d(C_in, C_out // 2, (1, 1), stride=1, padding=0, bias=False) 
+    self.conv_1 = nn.Conv2d(C_in, C_out // 2, (1, 1), stride=2, padding=0, bias=False)
+    self.conv_2 = nn.Conv2d(C_in, C_out // 2, (1, 1), stride=2, padding=0, bias=False) 
     self.bn = nn.BatchNorm2d(C_out, affine=affine)
     #print('FactorizedReduce')
 
@@ -181,7 +196,7 @@ class PreprocessReduce(nn.Module):
     # correction of dimension mismatch error
     out = torch.cat([self.conv_1(x), self.conv_2(x[:,:,:,:])], dim=1)
     out = self.bn(out)
-    print('PreprocessReduce: {}'.format(out.shape))
+    #print('PreprocessReduce: {}'.format(out.shape))
     #print("FactorizedReduce data dimension {}".format(x.shape)) #print
     return out
 
@@ -197,10 +212,10 @@ class PreReLUConvBN(nn.Module):
     #print("ReLUConvBN.init {}".format(kernel_size)) #delete print
 
   def forward(self, x):
-    print("ReLUConvBN.forward {}".format(x.shape)) #print
-    print(x.shape)
-    print(self.op[1].padding)
+    #print("ReLUConvBN.forward {}".format(x.shape)) #print
+    #print(x.shape)
+    #print(self.op[1].padding)
     res = self.op(x)
     
-    print('PrePreLUCOnvBN: {}'.format(res.shape))
+    #print('PrePreLUCOnvBN: {}'.format(res.shape))
     return res
