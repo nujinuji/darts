@@ -35,6 +35,8 @@ class Cell(nn.Module):
 
     self._ops = nn.ModuleList()
     self._ops_str = []
+    if reduction: 
+      print(' reduction')
     for name, index in zip(op_names, indices):
       stride = 2 if reduction and index < 2 else 1
       op = OPS[name](C, stride, True)
@@ -49,6 +51,9 @@ class Cell(nn.Module):
     s0 = self.preprocess0(s0)
     s1 = self.preprocess1(s1)
 
+    print('--------step ops: ')
+    print(self._ops)
+
     states = [s0, s1]
     for i in range(self._steps):
       h1 = states[self._indices[2*i]]
@@ -57,7 +62,8 @@ class Cell(nn.Module):
       print('cell {}step: {}, {}'.format(i, h1.shape, h2.shape))
       op1 = self._ops[2*i]
       op2 = self._ops[2*i+1]
-      print('op: {}, {}'.format(op1, op2))
+      print('op: \n  {}\n  {}'.format(op1, op2))
+      print(' in: {}, {}'.format(h1.shape, h2.shape))
       h1 = op1(h1)
       h2 = op2(h2)
       print('out: {}, {}'.format(h1.shape, h2.shape))
@@ -127,7 +133,7 @@ class NetworkCIFAR(nn.Module):
     #print('in networkCIFAR')
     self._layers = layers
     self._auxiliary = auxiliary
-
+    print('creating network')
     stem_multiplier = 3
     C_curr = stem_multiplier*C
     self.stem = nn.Sequential(
@@ -144,6 +150,7 @@ class NetworkCIFAR(nn.Module):
         reduction = True
       else:
         reduction = False
+      print('creating a cell')
       cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       #print('Cell created at layer {}'.format(i))
       #print(genotype)

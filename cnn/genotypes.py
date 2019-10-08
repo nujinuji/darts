@@ -97,3 +97,5 @@ DARTS_NEW = Genotype(
   reduce_concat = [0, 1],
 )
 '''
+
+NEW = genotype = Genotype(normal=[('max_pool_1x2', 0), ('sep_conv_1x3', 1), ('dil_conv_1x3', 0), ('sep_conv_1x3', 1), ('max_pool_1x2', 1), ('max_pool_1x2', 0), ('avg_pool_1x2', 1), ('avg_pool_1x2', 0)], normal_concat=range(2, 6), reduce=[('max_pool_1x2', 0), ('max_pool_1x2', 1), ('skip_connect', 0), ('max_pool_1x2', 2), ('dil_conv_1x3', 0), ('avg_pool_1x2', 2), ('avg_pool_1x2', 4), ('max_pool_1x2', 3)], reduce_concat=range(2, 6))
