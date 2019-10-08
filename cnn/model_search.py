@@ -48,7 +48,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     self._bns = nn.ModuleList()
 
-    if reduction:
+    #if reduction:
       #print(' reduce!')
 
     for i in range(self._steps):

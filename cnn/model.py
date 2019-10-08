@@ -35,7 +35,7 @@ class Cell(nn.Module):
 
     self._ops = nn.ModuleList()
     self._ops_str = []
-    if reduction: 
+    #if reduction: 
       #print(' reduction')
     for name, index in zip(op_names, indices):
       stride = 2 if reduction and index < 2 else 1
