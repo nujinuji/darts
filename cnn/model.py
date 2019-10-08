@@ -36,7 +36,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     self._ops_str = []
     if reduction: 
-      print(' reduction')
+      #print(' reduction')
     for name, index in zip(op_names, indices):
       stride = 2 if reduction and index < 2 else 1
       op = OPS[name](C, stride, True)
@@ -51,22 +51,22 @@ class Cell(nn.Module):
     s0 = self.preprocess0(s0)
     s1 = self.preprocess1(s1)
 
-    print('--------step ops: ')
-    print(self._ops)
+    #print('--------step ops: ')
+    #print(self._ops)
 
     states = [s0, s1]
     for i in range(self._steps):
       h1 = states[self._indices[2*i]]
       h2 = states[self._indices[2*i+1]]
 
-      print('cell {}step: {}, {}'.format(i, h1.shape, h2.shape))
+      #print('cell {}step: {}, {}'.format(i, h1.shape, h2.shape))
       op1 = self._ops[2*i]
       op2 = self._ops[2*i+1]
-      print('op: \n  {}\n  {}'.format(op1, op2))
-      print(' in: {}, {}'.format(h1.shape, h2.shape))
+      #print('op: \n  {}\n  {}'.format(op1, op2))
+      #print(' in: {}, {}'.format(h1.shape, h2.shape))
       h1 = op1(h1)
       h2 = op2(h2)
-      print('out: {}, {}'.format(h1.shape, h2.shape))
+      #print('out: {}, {}'.format(h1.shape, h2.shape))
       if self.training and drop_prob > 0.:
         if not isinstance(op1, Identity):
           h1 = drop_path(h1, drop_prob)
@@ -74,7 +74,7 @@ class Cell(nn.Module):
           h2 = drop_path(h2, drop_prob)
       s = h1 + h2
       states += [s]
-    print([states[i].shape for i in self._concat])
+    #print([states[i].shape for i in self._concat])
     return torch.cat([states[i] for i in self._concat], dim=1)
 
 
@@ -133,7 +133,7 @@ class NetworkCIFAR(nn.Module):
     #print('in networkCIFAR')
     self._layers = layers
     self._auxiliary = auxiliary
-    print('creating network')
+    #print('creating network')
     stem_multiplier = 3
     C_curr = stem_multiplier*C
     self.stem = nn.Sequential(
@@ -150,7 +150,7 @@ class NetworkCIFAR(nn.Module):
         reduction = True
       else:
         reduction = False
-      print('creating a cell')
+      #print('creating a cell')
       cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       #print('Cell created at layer {}'.format(i))
       #print(genotype)
@@ -170,7 +170,7 @@ class NetworkCIFAR(nn.Module):
     #print(input.shape)
     logits_aux = None
     s0 = s1 = self.stem(input)
-    print('        {}'.format(s1.shape))
+    #print('        {}'.format(s1.shape))
     for i, cell in enumerate(self.cells):
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
       if i == 2*self._layers//3:
