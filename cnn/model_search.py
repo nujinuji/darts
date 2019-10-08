@@ -47,6 +47,10 @@ class Cell(nn.Module):
 
     self._ops = nn.ModuleList()
     self._bns = nn.ModuleList()
+
+    if reduction:
+      print(' reduce!')
+
     for i in range(self._steps):
       for j in range(2+i):
         stride = 2 if reduction and j < 2 else 1
@@ -71,8 +75,9 @@ class Cell(nn.Module):
           s += out
       offset += len(states)
       states.append(s)
-
-    return torch.cat(states[-self._multiplier:], dim=1)
+    out = torch.cat(states[-self._multiplier:], dim=1) 
+    print('cell output shape: {}'.format(out.shape))
+    return out
 
 
 class Network(nn.Module):
@@ -102,6 +107,7 @@ class Network(nn.Module):
         reduction = True
       else:
         reduction = False
+      print('create cell {}'.format(i))
       cell = Cell(steps, multiplier, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       reduction_prev = reduction
       self.cells += [cell]

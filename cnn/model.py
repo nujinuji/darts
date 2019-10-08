@@ -137,7 +137,7 @@ class NetworkCIFAR(nn.Module):
     stem_multiplier = 3
     C_curr = stem_multiplier*C
     self.stem = nn.Sequential(
-      nn.Conv2d(1, C_curr, 3, padding=1, bias=False),
+      nn.Conv2d(1, C_curr, (9, 3), padding=0),
       nn.BatchNorm2d(C_curr)
     )
     
@@ -170,6 +170,7 @@ class NetworkCIFAR(nn.Module):
     #print(input.shape)
     logits_aux = None
     s0 = s1 = self.stem(input)
+    print('        {}'.format(s1.shape))
     for i, cell in enumerate(self.cells):
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
       if i == 2*self._layers//3:
